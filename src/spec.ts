@@ -13,7 +13,7 @@ export const spec: SpecGroup[] = [
     title: 'Defaults',
     items: [
       `Amount starts at ${euros(EXAMPLE.defaultAmount)} (or the limit, if lower). Replace with the median withdrawal once we have it.`,
-      'Speed starts on the free payout. The instant payout is never pre-selected.',
+      '“In 1-3 business days” (free) is selected first. “Right now” (19.90 €) is never pre-selected.',
       'Term starts at 12 months.',
     ],
   },
