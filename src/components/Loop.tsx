@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { useReducedMotion } from '../hooks/motion';
 
 const SIZE = 360;
@@ -25,11 +26,13 @@ const pointAt = (degrees: number, radius = RADIUS) => {
  */
 export function Loop() {
   const reduced = useReducedMotion();
+  // Unique, because the page renders the hero twice (see PageLoop).
+  const pathId = `loop-${useId().replace(/[^a-z0-9]/gi, '')}`;
 
   return (
     <nav className="loop" aria-label="Sections">
       <svg viewBox={`0 0 ${SIZE} ${SIZE}`} aria-hidden="true">
-        <path id="loop-path" className="loop__path" d={PATH} pathLength={1} />
+        <path id={pathId} className="loop__path" d={PATH} pathLength={1} />
         {[45, 135, 225, 315].map((deg) => {
           const { x, y } = pointAt(deg);
           return (
@@ -47,7 +50,7 @@ export function Loop() {
           <circle className="loop__signal" r={5} opacity={0}>
             <set attributeName="opacity" to="1" begin="1.8s" fill="freeze" />
             <animateMotion dur="9s" begin="1.8s" repeatCount="indefinite" rotate="auto">
-              <mpath href="#loop-path" />
+              <mpath href={`#${pathId}`} />
             </animateMotion>
           </circle>
         )}
