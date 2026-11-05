@@ -4,7 +4,7 @@
  * before/now cards all read from this one list, so they can never disagree.
  */
 
-export type FindingId = 'maxDefault' | 'paidDefault' | 'nextMonthOnly' | 'format' | 'copy' | 'loading';
+export type FindingId = 'maxDefault' | 'paidDefault' | 'nextMonthOnly' | 'format' | 'loading';
 
 export interface Finding {
   id: FindingId;
@@ -20,12 +20,13 @@ export const findings: Finding[] = [
   {
     id: 'maxDefault',
     issue: 'The amount starts at the full limit. The slider opens all the way to the right.',
-    why: 'Most people do not want the full limit, so their first move is a correction: dragging back, or tapping − many times. That is the friction we saw at Bigbank. And an amount set higher than needed is harder to repay, which is ESTO’s risk too.',
+    why: 'Cleo, Shopee and Zopa start the amount well below the limit. At Bigbank, Hotjar recordings showed people tapping + and − many times to reach their amount. A start far from the amount people want means more of that.',
     fix: 'It starts at a modest amount. Going higher is the customer’s choice, not the default.',
   },
   {
     id: 'paidDefault',
-    issue: 'The paid instant payout (19.90 €) is already switched on. Free needs an extra tap.',
+    issue:
+      '“Kiirmakse” (19.90 €) is already switched on. The user needs to tap that toggle to find out that there’s a free option.',
     why: 'Instant payout is a fair, useful service. But when people notice the fee late, it feels like a trick, and a fair 19.90 € becomes a support ticket. As a clear choice, the people who need speed still pay for it, and feel good about it.',
     fix: 'Speed is two equal choices with the price on each. Free is selected first.',
   },
@@ -42,15 +43,9 @@ export const findings: Finding[] = [
     fix: 'One formatting rule for all three markets: “2 000 €”, “19,90 €”. A test locks it in.',
   },
   {
-    id: 'copy',
-    issue: 'The help text says to “press the button above”. The control is a toggle.',
-    why: 'The text describes a control that is not there. People stop and re-read, and every pause on this screen is a chance to leave.',
-    fix: 'No instructions needed. Each option says what it is and what it costs.',
-  },
-  {
     id: 'loading',
-    issue: 'While loading, the toggle shows off while the text next to it says on.',
-    why: 'For a moment the screen says two opposite things. A tap in that moment can pick the paid option by accident, which leads straight to a complaint.',
+    issue: 'While the page loads, the toggle shows off for a moment while the text says on.',
+    why: 'It is brief. But a money screen should never show two answers at once, and a proper loading state is a small fix.',
     fix: 'A real loading state. Nothing is shown until it is true, and nothing is clickable.',
   },
 ];

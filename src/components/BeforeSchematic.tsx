@@ -16,7 +16,6 @@ const REDLINES: Record<FindingId, { mark: ReactNode; pin: [number, number] }> = 
     pin: [250, 330],
   },
   format: { mark: <path d="M84 176 q56 9 112 0" pathLength={1} />, pin: [206, 128] },
-  copy: { mark: <path d="M262 266 h8 v42 h-8" pathLength={1} />, pin: [270, 288] },
   loading: { mark: <path d="M34 262 C 8 270, 8 292, 22 300" pathLength={1} />, pin: [12, 262] },
 };
 

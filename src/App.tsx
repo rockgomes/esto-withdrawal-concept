@@ -136,7 +136,7 @@ export default function App() {
       <main>
         <section id="problem" className="section" aria-labelledby="problem-title">
           <SectionHead index="01" id="problem-title" title="Problem">
-            I opened the withdrawal screen in my own account, on mobile and desktop. Six things stood out.
+            I opened the withdrawal screen in my own account, on mobile and desktop. Five things stood out.
           </SectionHead>
           <BeforeSchematic active={activeFinding} onActivate={setActiveFinding} />
         </section>
