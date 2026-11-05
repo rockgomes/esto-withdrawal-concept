@@ -17,8 +17,6 @@
   --on-green: #0f1a12;
   --screen: #ffffff;
   --screen-2: #f4f2ee;
-  --todo-bg: #fff1c2;
-  --todo-line: #b07d00;
   --shadow: 0 30px 60px -30px rgb(22 20 15 / 0.35), 0 8px 20px -12px rgb(22 20 15 / 0.25);
 
   --font-display: 'Instrument Serif', 'Times New Roman', serif;
@@ -45,8 +43,6 @@
     --on-red: #121110;
     --screen: #1c1b18;
     --screen-2: #26241f;
-    --todo-bg: #3d3210;
-    --todo-line: #e0b440;
     --shadow: 0 30px 60px -30px rgb(0 0 0 / 0.8), 0 8px 20px -12px rgb(0 0 0 / 0.6);
     color-scheme: dark;
   }
@@ -63,8 +59,6 @@
   --on-red: #121110;
   --screen: #1c1b18;
   --screen-2: #26241f;
-  --todo-bg: #3d3210;
-  --todo-line: #e0b440;
   --shadow: 0 30px 60px -30px rgb(0 0 0 / 0.8), 0 8px 20px -12px rgb(0 0 0 / 0.6);
   color-scheme: dark;
 }
@@ -171,17 +165,6 @@ a {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
-}
-
-.todo {
-  background: var(--todo-bg);
-  color: var(--ink);
-  outline: 1.5px dashed var(--todo-line);
-  outline-offset: 1px;
-  border-radius: 4px;
-  padding: 0 4px;
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
 }
 
 /* ─── Buttons ──────────────────────────────────────────────────────────── */

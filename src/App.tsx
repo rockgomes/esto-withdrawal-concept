@@ -4,7 +4,6 @@ import { ExternalLink } from './components/ExternalLink';
 import { BeforeSchematic } from './components/BeforeSchematic';
 import { Loop } from './components/Loop';
 import { ThemeSwitch } from './components/ThemeSwitch';
-import { Todo } from './components/Todo';
 import { WithdrawalScreen, type AmountSource } from './components/WithdrawalScreen';
 import { findings, type FindingId } from './content';
 import { withViewTransition } from './hooks/motion';
@@ -127,8 +126,8 @@ export default function App() {
           </h1>
           <p className="hero__lede">
             ESTO’s withdrawal screen works, but it asks people to trust numbers they cannot fully see. I
-            rebuilt it so the full cost is clear, speed is an honest choice, and the numbers read the same in
-            all three markets. Less doubt, fewer support tickets, more people who finish.
+            rebuilt it so the full cost is clear, the free transfer is selected by default, and the numbers
+            read the same in all three markets. Less doubt, fewer support tickets, more people who finish.
           </p>
           <p className="hero__byline">
             Rock Gomes · Product designer ·{' '}
@@ -372,9 +371,7 @@ export default function App() {
             on every push.
           </SectionHead>
           <ul className="built">
-            <li>
-              Time: <Todo>add when finished</Todo>
-            </li>
+            <li>Time: about 2.5 hours, from first idea to live site.</li>
             <li>
               Code:{' '}
               <ExternalLink href="https://github.com/rockgomes/esto-withdrawal-concept">
