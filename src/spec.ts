@@ -22,7 +22,7 @@ export const spec: SpecGroup[] = [
     items: [
       `Minimum ${euros(EXAMPLE.minAmount)}, step ${euros(EXAMPLE.step)}, maximum is the available limit.`,
       'Typed input accepts “1500”, “1 500”, “1500,50”, “1.500” and “1,500.50”.',
-      'Out-of-range input is corrected, and an inline message says why. Never silently.',
+      'Out-of-range input is corrected, and an inline message says why.',
     ],
   },
   {

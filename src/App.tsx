@@ -313,7 +313,7 @@ export default function App() {
 
         <section id="spec" className="section" aria-labelledby="spec-title">
           <SectionHead index="03" id="spec-title" title="Spec">
-            What an engineer needs to build the real thing. Short on purpose.
+            What an engineer needs to build the real thing.
           </SectionHead>
           <div className="spec">
             {spec.map((group) => (
