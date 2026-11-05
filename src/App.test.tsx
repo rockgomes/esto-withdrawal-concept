@@ -85,3 +85,16 @@ describe('phone width', () => {
     expect(within(width).getByRole('radio', { name: '375 px' })).toBeChecked();
   });
 });
+
+describe('outside links', () => {
+  it('open in a new tab and say so', () => {
+    render(<App />);
+    const outside = screen.getAllByRole('link').filter((a) => a.getAttribute('href')?.startsWith('http'));
+    expect(outside.length).toBeGreaterThan(0);
+    outside.forEach((a) => {
+      expect(a).toHaveAttribute('target', '_blank');
+      expect(a).toHaveAttribute('rel', 'noopener noreferrer');
+      expect(a).toHaveTextContent('(opens in a new tab)');
+    });
+  });
+});

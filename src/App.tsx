@@ -1,4 +1,5 @@
 import { useEffect, useReducer, useRef, useState, type ReactNode } from 'react';
+import { ExternalLink } from './components/ExternalLink';
 import { BeforeSchematic } from './components/BeforeSchematic';
 import { Loop } from './components/Loop';
 import { ThemeSwitch } from './components/ThemeSwitch';
@@ -129,7 +130,8 @@ export default function App() {
             all three markets. Less doubt, fewer support tickets, more people who finish.
           </p>
           <p className="hero__byline">
-            Rock Gomes · Product designer · <a href="https://www.rockgomes.com">rockgomes.com</a>
+            Rock Gomes · Product designer ·{' '}
+            <ExternalLink href="https://www.rockgomes.com">rockgomes.com</ExternalLink>
           </p>
         </div>
         <Loop />
@@ -381,9 +383,9 @@ export default function App() {
             </li>
             <li>
               Code:{' '}
-              <a href="https://github.com/rockgomes/esto-withdrawal-concept">
+              <ExternalLink href="https://github.com/rockgomes/esto-withdrawal-concept">
                 github.com/rockgomes/esto-withdrawal-concept
-              </a>
+              </ExternalLink>
             </li>
             <li>
               LV and LT copy are machine drafts. I don’t speak either, so they need a native speaker first.
@@ -394,7 +396,7 @@ export default function App() {
 
       <footer className="footer">
         <p>
-          Rock Gomes · <a href="https://www.rockgomes.com">rockgomes.com</a> ·{' '}
+          Rock Gomes · <ExternalLink href="https://www.rockgomes.com">rockgomes.com</ExternalLink> ·{' '}
           <a href="mailto:rock@rockgomes.com">rock@rockgomes.com</a>
         </p>
         <p className="footer__legal">
