@@ -1185,12 +1185,6 @@ main {
   color: var(--paper);
 }
 
-.lab__intro {
-  margin: -4px 0 14px;
-  color: var(--ink-2);
-  max-width: 36em;
-}
-
 .lab__draft {
   margin-top: 10px;
   font: 0.8rem var(--font-mono);
@@ -1274,6 +1268,28 @@ main {
   font-size: 0.95rem;
 }
 
+.lab__result[hidden] {
+  display: none;
+}
+
+.lab__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.lab__head .lab__title {
+  margin-bottom: 0;
+}
+
+.lab__reset {
+  min-height: 36px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+}
+
 .lab__result-label {
   font: 500 0.7rem var(--font-mono);
   letter-spacing: 0.06em;
@@ -1345,7 +1361,8 @@ main {
 /* Theme switch */
 
 .theme-switch {
-  position: fixed;
+  /* Top of the page, not fixed: a floating button would cover content while scrolling. */
+  position: absolute;
   top: 16px;
   right: 16px;
   z-index: 5;
@@ -1795,7 +1812,7 @@ main {
 }
 
 @media (max-width: 560px) {
-  /* Keep the first line clear of the fixed theme switch. */
+  /* Keep the first line clear of the theme switch. */
   .hero .eyebrow {
     padding-right: 56px;
   }

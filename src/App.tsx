@@ -14,16 +14,10 @@ const LOCALE_NAMES: Record<Locale, string> = { en: 'EN', et: 'ET', lv: 'LV', lt:
 const UNCHECKED_LOCALES: Locale[] = ['lv', 'lt'];
 const SLOW_NETWORK_MS = 2200;
 
-type ScenarioId = 'normal' | 'overLimit' | 'underMin' | 'empty' | 'slow' | 'longCopy';
+type ScenarioId = 'overLimit' | 'underMin' | 'empty' | 'slow' | 'longCopy';
 
-/** Each scenario is a starting state. Labels never change, and one is always selected. */
+/** Each edge case is a starting state. Labels never change. */
 const SCENARIOS: { id: ScenarioId; name: string; setup: string; result: string }[] = [
-  {
-    id: 'normal',
-    name: 'Normal',
-    setup: 'The screen as a customer first sees it.',
-    result: 'Defaults: 300 €, free payout, 12 months.',
-  },
   {
     id: 'overLimit',
     name: 'Types more than the limit',
@@ -63,7 +57,7 @@ export default function App() {
   const [locale, setLocale] = useState<Locale>('en');
   const [loading, setLoading] = useState(false);
   const [narrow, setNarrow] = useState(false);
-  const [scenario, setScenario] = useState<ScenarioId>('normal');
+  const [scenario, setScenario] = useState<ScenarioId | null>(null);
   const [inputs, setInputs] = useState<InputCounts>({ stepper: 0, slider: 0, typed: 0 });
   const [toast, setToast] = useState<string | null>(null);
   const [activeFinding, setActiveFinding] = useState<FindingId | null>(null);
@@ -78,11 +72,11 @@ export default function App() {
     [],
   );
 
-  const runScenario = (id: ScenarioId) => {
+  const runScenario = (id: ScenarioId | null) => {
     clearTimeout(slowTimer.current);
     setScenario(id);
     withViewTransition(() => {
-      // Every scenario starts from a clean screen, so one can never leave another stuck.
+      // Every edge case starts from a clean screen, so one can never leave another stuck.
       dispatch({ type: 'reset' });
       setLoading(id === 'slow');
       if (id === 'longCopy') setLocale('lt');
@@ -106,7 +100,7 @@ export default function App() {
 
   const countInput = (source: AmountSource) =>
     setInputs((counts) => ({ ...counts, [source]: counts[source] + 1 }));
-  const active = SCENARIOS.find((s) => s.id === scenario)!;
+  const active = SCENARIOS.find((s) => s.id === scenario);
 
   return (
     <>
@@ -215,13 +209,19 @@ export default function App() {
               </fieldset>
 
               <div className="lab__group">
-                <h3 className="lab__title" id="edge-title">
-                  Edge cases
-                </h3>
-                <p className="lab__intro">
-                  Each one puts the screen into a state that often breaks. Pick one, then keep using the
-                  screen.
-                </p>
+                <div className="lab__head">
+                  <h3 className="lab__title" id="edge-title">
+                    Edge cases
+                  </h3>
+                  <button
+                    type="button"
+                    className="button button--ghost lab__reset"
+                    disabled={!active}
+                    onClick={() => runScenario(null)}
+                  >
+                    Reset screen
+                  </button>
+                </div>
                 <ul className="scenarios" aria-labelledby="edge-title">
                   {SCENARIOS.map((s) => (
                     <li key={s.id}>
@@ -238,9 +238,9 @@ export default function App() {
                     </li>
                   ))}
                 </ul>
-                <p className="lab__result" role="status">
+                <p className="lab__result" role="status" hidden={!active}>
                   <span className="lab__result-label">{loading ? 'Loading' : 'Handled'}</span>
-                  {loading ? 'Waiting for the limit…' : active.result}
+                  {loading ? 'Waiting for the limit…' : active?.result}
                 </p>
               </div>
             </aside>

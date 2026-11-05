@@ -6,9 +6,26 @@ import App from './App';
 const scenario = (name: RegExp) => screen.getByRole('button', { name });
 
 describe('edge case scenarios', () => {
-  it('starts on Normal', () => {
+  it('starts with no edge case selected', () => {
     render(<App />);
-    expect(scenario(/^normal/i)).toHaveAttribute('aria-pressed', 'true');
+    within(screen.getByRole('list', { name: 'Edge cases' }))
+      .getAllByRole('button')
+      .forEach((b) => expect(b).toHaveAttribute('aria-pressed', 'false'));
+  });
+
+  it('always shows the reset, disabled until an edge case runs', () => {
+    render(<App />);
+    expect(screen.getByRole('button', { name: 'Reset screen' })).toBeDisabled();
+  });
+
+  it('goes back to the default screen', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(scenario(/limit fully used/i));
+    await user.click(screen.getByRole('button', { name: 'Reset screen' }));
+
+    expect(screen.getByRole('heading', { name: 'How much do you want to withdraw?' })).toBeInTheDocument();
   });
 
   it('keeps the same labels after a scenario runs', async () => {
