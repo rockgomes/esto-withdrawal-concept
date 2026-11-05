@@ -1,4 +1,5 @@
 import { useEffect, useReducer, useRef, useState, type ReactNode } from 'react';
+import { KIND_LABEL, metrics } from './metrics';
 import { ExternalLink } from './components/ExternalLink';
 import { BeforeSchematic } from './components/BeforeSchematic';
 import { Loop } from './components/Loop';
@@ -351,35 +352,28 @@ export default function App() {
             here.
           </SectionHead>
           <div className="metrics">
-            <article className="metric metric--primary">
-              <h3>Primary</h3>
-              <p className="metric__name">Withdrawal completion</p>
-              <p>
-                Share of people who open the screen and finish a withdrawal. Clear cost should not scare them
-                off.
-              </p>
-            </article>
-            <article className="metric">
-              <h3>Guardrail</h3>
-              <p className="metric__name">Repayment on time</p>
-              <p>
-                First three instalments paid on time. People who saw the full plan should repay better, not
-                worse.
-              </p>
-            </article>
-            <article className="metric">
-              <h3>Guardrail</h3>
-              <p className="metric__name">Support contacts about fees</p>
-              <p>Per 1 000 withdrawals. Fewer “why was I charged?” tickets is the trust signal.</p>
-            </article>
-            <article className="metric metric--trade">
-              <h3>The honest trade</h3>
-              <p className="metric__name">Instant payout revenue will likely drop</p>
-              <p>
-                Free as the default means fewer paid payouts. I would measure by how much, per market, before
-                arguing it is worth it.
-              </p>
-            </article>
+            {metrics.map((m) => (
+              <article key={m.name} className={`metric metric--${m.kind}`}>
+                <h3>{KIND_LABEL[m.kind]}</h3>
+                <p className="metric__name">{m.name}</p>
+                <p className="metric__body">{m.body}</p>
+                <div className="metric__measure">
+                  <p className="metric__unit">{m.unit}</p>
+                  <p className="metric__formula">
+                    {m.formula.map((part, i) =>
+                      typeof part === 'string' ? (
+                        <span key={i}>{part}</span>
+                      ) : (
+                        <code key={i} className="spec__tag">
+                          {part.tracked}
+                        </code>
+                      ),
+                    )}
+                  </p>
+                  <p className="metric__cadence">{m.cadence}</p>
+                </div>
+              </article>
+            ))}
           </div>
           <p className="experiment">
             <strong>Test:</strong> 50/50 split on new withdrawals, per market, with the decision rule written

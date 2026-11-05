@@ -1663,13 +1663,13 @@ main {
 
 .metrics {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
   gap: 12px;
 }
 
 .metric {
-  display: grid;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
   padding: 22px;
   border: 1.5px solid var(--ink);
@@ -1688,9 +1688,35 @@ main {
   font: 400 1.7rem/1.1 var(--font-display);
 }
 
-.metric p:last-child {
+.metric__body {
   color: var(--ink-2);
   font-size: 0.95rem;
+}
+
+/* Pushed to the bottom, so the measurements line up across a row of cards. */
+.metric__measure {
+  display: grid;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+}
+
+.metric__unit {
+  font: 400 2.6rem/1 var(--font-display);
+}
+
+.metric__formula {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font: 500 0.82rem var(--font-mono);
+}
+
+.metric__cadence {
+  color: var(--ink-2);
+  font-size: 0.88rem;
 }
 
 .metric--primary {
@@ -1699,8 +1725,13 @@ main {
 }
 
 .metric--primary h3,
-.metric--primary p:last-child {
+.metric--primary .metric__body,
+.metric--primary .metric__cadence {
   color: color-mix(in oklab, var(--paper) 78%, var(--ink));
+}
+
+.metric--primary .spec__tag {
+  border-color: color-mix(in oklab, var(--paper) 50%, var(--ink));
 }
 
 .metric--trade {
