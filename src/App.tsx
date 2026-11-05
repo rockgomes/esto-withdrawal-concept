@@ -1,92 +1,119 @@
 import { useEffect, useReducer, useRef, useState, type ReactNode } from 'react';
 import { BeforeSchematic } from './components/BeforeSchematic';
 import { Loop } from './components/Loop';
+import { ThemeSwitch } from './components/ThemeSwitch';
 import { Todo } from './components/Todo';
-import { WithdrawalScreen } from './components/WithdrawalScreen';
+import { WithdrawalScreen, type AmountSource } from './components/WithdrawalScreen';
 import { findings, type FindingId } from './content';
 import { withViewTransition } from './hooks/motion';
 import { LOCALES, type Locale } from './lib/format';
-import { EXAMPLE, initialState, isEmpty, withdrawalReducer } from './lib/withdrawal';
+import { initialState, withdrawalReducer } from './lib/withdrawal';
 import { spec, specAsMarkdown } from './spec';
 
 const LOCALE_NAMES: Record<Locale, string> = { en: 'EN', et: 'ET', lv: 'LV', lt: 'LT' };
+const UNCHECKED_LOCALES: Locale[] = ['lv', 'lt'];
 const SLOW_NETWORK_MS = 2200;
+
+type ScenarioId = 'normal' | 'overLimit' | 'underMin' | 'empty' | 'slow' | 'longCopy';
+
+/** Each scenario is a starting state. Labels never change, and one is always selected. */
+const SCENARIOS: { id: ScenarioId; name: string; setup: string; result: string }[] = [
+  {
+    id: 'normal',
+    name: 'Normal',
+    setup: 'The screen as a customer first sees it.',
+    result: 'Defaults: 300 €, free payout, 12 months.',
+  },
+  {
+    id: 'overLimit',
+    name: 'Types more than the limit',
+    setup: 'The customer types 2 500 € with a 2 000 € limit.',
+    result: 'Corrected to the limit. The screen says why, in the customer’s language.',
+  },
+  {
+    id: 'underMin',
+    name: 'Types less than the minimum',
+    setup: 'The customer types 5 €.',
+    result: 'Raised to the minimum, with a message.',
+  },
+  {
+    id: 'empty',
+    name: 'Limit fully used',
+    setup: 'There is nothing left to withdraw.',
+    result: 'It explains why, and nothing can be submitted.',
+  },
+  {
+    id: 'slow',
+    name: 'Slow network',
+    setup: 'The limit takes two seconds to load. Select it again to replay.',
+    result: 'A skeleton while loading. No control shows a state that is not true yet.',
+  },
+  {
+    id: 'longCopy',
+    name: 'Longest language',
+    setup: 'Switches to Lithuanian, which has the longest strings.',
+    result: 'Nothing overflows or wraps badly.',
+  },
+];
+
+type InputCounts = Record<AmountSource, number>;
 
 export default function App() {
   const [state, dispatch] = useReducer(withdrawalReducer, initialState);
   const [locale, setLocale] = useState<Locale>('en');
   const [loading, setLoading] = useState(false);
   const [narrow, setNarrow] = useState(false);
-  const [result, setResult] = useState('Pick a case. The prototype handles it live.');
+  const [scenario, setScenario] = useState<ScenarioId>('normal');
+  const [inputs, setInputs] = useState<InputCounts>({ stepper: 0, slider: 0, typed: 0 });
   const [toast, setToast] = useState<string | null>(null);
   const [activeFinding, setActiveFinding] = useState<FindingId | null>(null);
-  const timers = useRef<number[]>([]);
+  const slowTimer = useRef<number | undefined>(undefined);
+  const toastTimer = useRef<number | undefined>(undefined);
 
-  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  useEffect(
+    () => () => {
+      clearTimeout(slowTimer.current);
+      clearTimeout(toastTimer.current);
+    },
+    [],
+  );
 
-  const later = (fn: () => void, ms: number) => {
-    timers.current.push(window.setTimeout(fn, ms));
-  };
-
-  const empty = isEmpty(state);
-
-  const cases = [
-    {
-      label: 'Type 2 500 €',
-      run: () => dispatch({ type: 'setAmount', amount: 250000 }),
-      result: 'Over the limit. Corrected to the limit, and the screen says why.',
-    },
-    {
-      label: 'Type 5 €',
-      run: () => dispatch({ type: 'setAmount', amount: 500 }),
-      result: 'Under the minimum. Raised to the minimum, with a message.',
-    },
-    {
-      label: empty ? 'Give the limit back' : 'Limit fully used',
-      run: () => withViewTransition(() => dispatch({ type: 'setLimit', limit: empty ? EXAMPLE.limit : 0 })),
-      result: empty
-        ? 'Limit restored. The amount comes back to a sensible default.'
-        : 'Empty state. It explains why, and nothing can be submitted.',
-    },
-    {
-      label: 'Slow network',
-      run: () => {
-        withViewTransition(() => setLoading(true));
-        later(() => withViewTransition(() => setLoading(false)), SLOW_NETWORK_MS);
-      },
-      result: 'Skeleton while loading. No toggle that says two things at once.',
-    },
-    {
-      label: 'Longest copy (LT)',
-      run: () => withViewTransition(() => setLocale('lt')),
-      result: 'Lithuanian runs longest. Nothing wraps badly or overflows.',
-    },
-    {
-      label: narrow ? 'Normal phone' : 'Small phone, 320px',
-      run: () => withViewTransition(() => setNarrow((n) => !n)),
-      result: narrow ? 'Back to 375px.' : '320px wide. Same layout, still readable.',
-    },
-  ];
-
-  const reset = () =>
+  const runScenario = (id: ScenarioId) => {
+    clearTimeout(slowTimer.current);
+    setScenario(id);
     withViewTransition(() => {
+      // Every scenario starts from a clean screen, so one can never leave another stuck.
       dispatch({ type: 'reset' });
-      setLocale('en');
-      setNarrow(false);
-      setLoading(false);
-      setResult('Reset to the defaults.');
+      setLoading(id === 'slow');
+      if (id === 'longCopy') setLocale('lt');
+      if (id === 'overLimit') dispatch({ type: 'setAmount', amount: 250000 });
+      if (id === 'underMin') dispatch({ type: 'setAmount', amount: 500 });
+      if (id === 'empty') dispatch({ type: 'setLimit', limit: 0 });
     });
+    if (id === 'slow') {
+      slowTimer.current = window.setTimeout(
+        () => withViewTransition(() => setLoading(false)),
+        SLOW_NETWORK_MS,
+      );
+    }
+  };
 
   const submit = () => {
+    clearTimeout(toastTimer.current);
     setToast('Prototype only. No money moved.');
-    later(() => setToast(null), 2600);
+    toastTimer.current = window.setTimeout(() => setToast(null), 2600);
   };
+
+  const countInput = (source: AmountSource) =>
+    setInputs((counts) => ({ ...counts, [source]: counts[source] + 1 }));
+  const active = SCENARIOS.find((s) => s.id === scenario)!;
 
   return (
     <>
       <a className="skip" href="#prototype">
         Skip to the prototype
       </a>
+      <ThemeSwitch />
 
       <header className="hero">
         <div className="hero__text">
@@ -103,13 +130,11 @@ export default function App() {
             </span>
           </h1>
           <p className="hero__lede">
-            ESTO’s withdrawal screen starts at the full limit, with a paid instant payout already switched on,
-            and shows only next month’s payment. I rebuilt it so the customer sees the real cost, chooses
-            speed on purpose, and reads the same numbers in all three markets.
+            ESTO’s withdrawal screen works, but it asks people to trust numbers they cannot fully see. I
+            rebuilt it so the full cost is clear, speed is an honest choice, and the numbers read the same in
+            all three markets. Less doubt, fewer support tickets, more people who finish.
           </p>
-          <p className="hero__byline">
-            Rock Gomes · <Todo>your role in one line, e.g. product designer, ex-Inbank</Todo>
-          </p>
+          <p className="hero__byline">Rock Gomes · Product designer</p>
         </div>
         <Loop />
       </header>
@@ -124,28 +149,48 @@ export default function App() {
 
         <section id="prototype" className="section" aria-labelledby="prototype-title">
           <SectionHead index="02" id="prototype-title" title="Prototype">
-            Live and clickable. Drag the amount, switch the speed and the term, change the market. Then try to
-            break it.
+            Live and clickable. Drag the amount, switch the speed and the term, change the market. Then run
+            the edge cases.
           </SectionHead>
 
           <div className="proto">
-            <div className={`phone ${narrow ? 'phone--narrow' : ''}`}>
-              <div className="phone__bar" aria-hidden="true">
-                <span>Withdraw</span>
-                <span className="phone__close">×</span>
+            <div className="proto__device">
+              <fieldset className="device">
+                <legend className="device__label">Phone width</legend>
+                <div className="device__options">
+                  {[false, true].map((isNarrow) => (
+                    <label key={String(isNarrow)} className="device__option">
+                      <input
+                        type="radio"
+                        name="phone-width"
+                        checked={narrow === isNarrow}
+                        onChange={() => withViewTransition(() => setNarrow(isNarrow))}
+                      />
+                      <span>{isNarrow ? '320 px' : '375 px'}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+
+              <div className={`phone ${narrow ? 'phone--narrow' : ''}`}>
+                <div className="phone__bar" aria-hidden="true">
+                  <span>Withdraw</span>
+                  <span className="phone__close">×</span>
+                </div>
+                <div className="phone__screen">
+                  <WithdrawalScreen
+                    state={state}
+                    dispatch={dispatch}
+                    locale={locale}
+                    loading={loading}
+                    onSubmit={submit}
+                    onAmountInput={countInput}
+                  />
+                </div>
+                <p className="toast" role="status" data-visible={toast !== null}>
+                  {toast}
+                </p>
               </div>
-              <div className="phone__screen">
-                <WithdrawalScreen
-                  state={state}
-                  dispatch={dispatch}
-                  locale={locale}
-                  loading={loading}
-                  onSubmit={submit}
-                />
-              </div>
-              <p className="toast" role="status" data-visible={toast !== null}>
-                {toast}
-              </p>
             </div>
 
             <aside className="lab" aria-label="Prototype controls">
@@ -164,65 +209,99 @@ export default function App() {
                     </label>
                   ))}
                 </div>
+                <p className={`lab__draft ${UNCHECKED_LOCALES.includes(locale) ? 'is-active' : ''}`}>
+                  LV and LT are machine drafts, not checked by a native speaker.
+                </p>
               </fieldset>
 
               <div className="lab__group">
-                <h3 className="lab__title">Try to break it</h3>
-                <div className="lab__cases">
-                  {cases.map((c) => (
-                    <button
-                      key={c.label}
-                      type="button"
-                      className="button button--ghost"
-                      disabled={loading}
-                      onClick={() => {
-                        c.run();
-                        setResult(c.result);
-                      }}
-                    >
-                      {c.label}
-                    </button>
+                <h3 className="lab__title" id="edge-title">
+                  Edge cases
+                </h3>
+                <p className="lab__intro">
+                  Each one puts the screen into a state that often breaks. Pick one, then keep using the
+                  screen.
+                </p>
+                <ul className="scenarios" aria-labelledby="edge-title">
+                  {SCENARIOS.map((s) => (
+                    <li key={s.id}>
+                      <button
+                        type="button"
+                        className="scenario"
+                        aria-pressed={scenario === s.id}
+                        disabled={loading && s.id !== 'slow'}
+                        onClick={() => runScenario(s.id)}
+                      >
+                        <span className="scenario__name">{s.name}</span>
+                        <span className="scenario__setup">{s.setup}</span>
+                      </button>
+                    </li>
                   ))}
-                  <button type="button" className="button button--quiet" onClick={reset}>
-                    Reset
-                  </button>
-                </div>
+                </ul>
                 <p className="lab__result" role="status">
-                  <span aria-hidden="true">→ </span>
-                  {loading ? 'Loading…' : result}
+                  <span className="lab__result-label">{loading ? 'Loading' : 'Handled'}</span>
+                  {loading ? 'Waiting for the limit…' : active.result}
                 </p>
               </div>
             </aside>
           </div>
 
-          <h3 className="subhead">What changed</h3>
+          <h3 className="subhead">Before and now</h3>
           <ol className="changes">
             {findings.map((finding, i) => (
               <li key={finding.id} className="change">
                 <span className="change__num">{i + 1}</span>
-                <p className="change__was">{finding.issue}</p>
-                <p className="change__now">{finding.fix}</p>
+                <div className="change__body">
+                  <p className="change__label">Before</p>
+                  <p className="change__was">{finding.issue}</p>
+                  <p className="change__label change__label--now">Now</p>
+                  <p className="change__now">{finding.fix}</p>
+                </div>
               </li>
             ))}
           </ol>
 
-          <aside className="inbank" aria-labelledby="inbank-title">
-            <h3 id="inbank-title" className="subhead">
-              Why I made these calls
+          <aside className="research" aria-labelledby="research-title">
+            <p className="research__kicker">Open question</p>
+            <h3 id="research-title" className="research__title">
+              How do people set the amount?
             </h3>
-            <p>I have designed loan flows for the same customers in the same markets, at Inbank.</p>
-            <ul>
-              <li>
-                <Todo>A lesson about defaults, e.g. what happened when an option was pre-selected.</Todo>
-              </li>
-              <li>
-                <Todo>A lesson about showing the total cost, and how it affected trust or completion.</Todo>
-              </li>
-              <li>
-                <Todo>A lesson about the three markets: copy length, formats, or regulation.</Todo>
-              </li>
-            </ul>
-            <p className="inbank__note">Lessons only. No Inbank screens, numbers or internal data.</p>
+            <div className="research__grid">
+              <div className="research__story">
+                <p>
+                  I have designed loan flows at Bigbank and Inbank, for the same customers in the same
+                  markets. At Bigbank we also had a slider with + and − buttons. In Hotjar recordings, some
+                  people tapped + again and again until they reached their amount. Others struggled to stop
+                  the slider on the exact value they wanted.
+                </p>
+                <p>
+                  This prototype keeps both controls for now, because I would not redesign them on a hunch. It
+                  is the first thing I would research.
+                </p>
+                <InputCounter counts={inputs} />
+              </div>
+              <ol className="research__plan">
+                <li>
+                  <strong>Watch.</strong> Session recordings of this screen. Count repeated + and − taps, and
+                  slider moves back and forth before Continue.
+                </li>
+                <li>
+                  <strong>Ask.</strong> Five to eight short moderated tests with one task: “withdraw 420 €”.
+                  Time it, count the corrections, ask what felt hard.
+                </li>
+                <li>
+                  <strong>Try.</strong> If the problem is real, test alternatives: quick amounts, bigger
+                  steps, or tapping the number to type it.
+                </li>
+                <li>
+                  <strong>Measure.</strong> Adjustments per withdrawal, by input type. It is already in the
+                  tracking spec below.
+                </li>
+              </ol>
+            </div>
+            <p className="research__note">
+              Lessons only. No Bigbank or Inbank screens, numbers or internal data.
+            </p>
           </aside>
         </section>
 
@@ -290,23 +369,26 @@ export default function App() {
         <section id="built" className="section section--built" aria-labelledby="built-title">
           <SectionHead index="05" id="built-title" title="How it was built">
             With Claude Code, as a real codebase: React, TypeScript and Vite. Unit tests cover the credit
-            math, the number formats, the amount rules and every translation. CI runs them on every push.
+            math, the number formats, the amount rules, the screen states and every translation. CI runs them
+            on every push.
           </SectionHead>
           <ul className="built">
             <li>
-              Time: <Todo>hours from idea to this page</Todo>
+              Time: <Todo>add when finished</Todo>
             </li>
             <li>
-              Code: <Todo>GitHub link</Todo>
+              Code: <Todo>GitHub link, once the repo exists</Todo>
             </li>
-            <li>LV and LT copy are first drafts. They need a native speaker before anything ships.</li>
+            <li>
+              LV and LT copy are machine drafts. I don’t speak either, so they need a native speaker first.
+            </li>
           </ul>
         </section>
       </main>
 
       <footer className="footer">
         <p>
-          Rock Gomes · <Todo>email or LinkedIn</Todo>
+          Rock Gomes · <a href="mailto:rock@rockgomes.com">rock@rockgomes.com</a>
         </p>
         <p className="footer__legal">
           Unofficial concept for a job application. Not affiliated with or endorsed by ESTO. All rates and
@@ -314,6 +396,36 @@ export default function App() {
         </p>
       </footer>
     </>
+  );
+}
+
+function InputCounter({ counts }: { counts: InputCounts }) {
+  const total = counts.stepper + counts.slider + counts.typed;
+  return (
+    <div className="counter">
+      <p className="counter__title">How you set the amount in this session</p>
+      <dl className="counter__rows">
+        <div>
+          <dt>+ and − taps</dt>
+          <dd className="num">{counts.stepper}</dd>
+        </div>
+        <div>
+          <dt>Slider moves</dt>
+          <dd className="num">{counts.slider}</dd>
+        </div>
+        <div>
+          <dt>Typed</dt>
+          <dd className="num">{counts.typed}</dd>
+        </div>
+      </dl>
+      <p className="counter__hint">
+        {total === 0
+          ? 'Try the prototype above, then look again.'
+          : counts.stepper >= 8
+            ? 'That many taps is the pattern we saw at Bigbank.'
+            : 'The real version would log this per withdrawal.'}
+      </p>
+    </div>
   );
 }
 

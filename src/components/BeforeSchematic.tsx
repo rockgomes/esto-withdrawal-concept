@@ -87,7 +87,13 @@ export function BeforeSchematic({ active, onActivate }: Props) {
               onClick={() => onActivate(active === finding.id ? null : finding.id)}
             >
               <span className="before__num">{i + 1}</span>
-              <span>{finding.issue}</span>
+              <span className="before__text">
+                <span>{finding.issue}</span>
+                {/* Collapsed until hover, focus or tap. Still in the DOM, so screen readers get it. */}
+                <span className="before__why">
+                  <span>{finding.why}</span>
+                </span>
+              </span>
             </button>
           </li>
         ))}

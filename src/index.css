@@ -11,6 +11,10 @@
   --line: #cfc7b8;
   --red: #c2341a;
   --on-red: #ffffff;
+  /* ESTO green, sampled from their app. Used only inside the prototype screen. */
+  --green: #54b274;
+  --green-tint: color-mix(in srgb, var(--green) 16%, var(--screen));
+  --on-green: #0f1a12;
   --screen: #ffffff;
   --screen-2: #f4f2ee;
   --todo-bg: #fff1c2;
@@ -556,6 +560,32 @@ main {
   border-color: var(--ink);
 }
 
+.before__text {
+  display: grid;
+}
+
+/* The reason opens inside the card: rows animate from 0fr to 1fr, so the card grows smoothly. */
+.before__why {
+  display: grid;
+  grid-template-rows: 0fr;
+  color: var(--ink-2);
+  font-size: 0.95rem;
+  transition:
+    grid-template-rows 280ms var(--ease-out),
+    margin-top 280ms var(--ease-out);
+}
+
+.before__why > span {
+  overflow: hidden;
+}
+
+.before__list button:hover .before__why,
+.before__list button:focus-visible .before__why,
+.before__list button[aria-pressed='true'] .before__why {
+  grid-template-rows: 1fr;
+  margin-top: 8px;
+}
+
 .before__num {
   display: grid;
   place-items: center;
@@ -778,7 +808,7 @@ main {
 }
 
 .amount__currency {
-  margin: 0 0.12em;
+  margin: 0 0.06em;
 }
 
 .amount__slider {
@@ -797,13 +827,13 @@ main {
 .amount__slider::-webkit-slider-runnable-track {
   height: 6px;
   border-radius: 3px;
-  background: linear-gradient(to right, var(--ink) var(--fill), var(--track) var(--fill));
+  background: linear-gradient(to right, var(--green) var(--fill), var(--track) var(--fill));
 }
 
 .amount__slider::-moz-range-track {
   height: 6px;
   border-radius: 3px;
-  background: linear-gradient(to right, var(--ink) var(--fill), var(--track) var(--fill));
+  background: linear-gradient(to right, var(--green) var(--fill), var(--track) var(--fill));
 }
 
 .amount__slider::-webkit-slider-thumb {
@@ -870,9 +900,9 @@ main {
 }
 
 .choice__card:has(input:checked) {
-  border-color: var(--ink);
-  background: var(--screen-2);
-  box-shadow: inset 0 0 0 1px var(--ink);
+  border-color: var(--green);
+  background: var(--green-tint);
+  box-shadow: inset 0 0 0 1px var(--green);
 }
 
 .choice__card:has(input:focus-visible),
@@ -916,10 +946,9 @@ main {
 }
 
 .segmented__item:has(input:checked) {
-  background: var(--screen);
-  box-shadow:
-    inset 0 0 0 1.5px var(--ink),
-    0 1px 3px rgb(0 0 0 / 0.15);
+  background: var(--green);
+  color: var(--on-green);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.15);
 }
 
 .summary {
@@ -1016,7 +1045,7 @@ main {
 }
 
 .swatch--principal {
-  background: var(--ink);
+  background: var(--green);
 }
 
 .swatch--interest {
@@ -1040,7 +1069,7 @@ main {
   flex: 1 1 0;
   min-width: 0;
   border-radius: 3px 3px 1px 1px;
-  background: var(--ink);
+  background: var(--green);
   overflow: hidden;
   transition: height 480ms var(--ease-out);
 }
@@ -1156,18 +1185,305 @@ main {
   color: var(--paper);
 }
 
-.lab__cases {
-  display: flex;
-  flex-wrap: wrap;
+.lab__intro {
+  margin: -4px 0 14px;
+  color: var(--ink-2);
+  max-width: 36em;
+}
+
+.lab__draft {
+  margin-top: 10px;
+  font: 0.8rem var(--font-mono);
+  color: var(--ink-2);
+  transition: color 160ms ease;
+}
+
+.lab__draft.is-active {
+  color: var(--red);
+}
+
+.scenarios {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
   gap: 8px;
 }
 
+.scenario {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  height: 100%;
+  padding: 14px 16px;
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  background: var(--screen);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms var(--ease-out);
+}
+
+.scenario:hover:not(:disabled) {
+  border-color: var(--ink);
+}
+
+.scenario:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.scenario[aria-pressed='true'] {
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.scenario[aria-pressed='true'] .scenario__name::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--red);
+  vertical-align: 0.1em;
+}
+
+.scenario:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.scenario__name {
+  font-weight: 600;
+}
+
+.scenario__setup {
+  color: var(--ink-2);
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
 .lab__result {
-  margin-top: 16px;
+  display: grid;
+  gap: 4px;
+  margin-top: 14px;
   padding: 14px 16px;
   border: 1.5px dashed var(--red);
   border-radius: 14px;
-  font-family: var(--font-mono);
+  font-size: 0.95rem;
+}
+
+.lab__result-label {
+  font: 500 0.7rem var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+
+/* Phone width: belongs to the device, so it sits on top of the phone. */
+
+.proto__device {
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+}
+
+.device {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.device__label {
+  float: left;
+  margin-right: 10px;
+  font: 500 0.75rem var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.device__options {
+  display: inline-flex;
+  padding: 3px;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+}
+
+.device__option {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font: 500 0.8rem var(--font-mono);
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.device__option input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.device__option:has(input:checked) {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.device__option:has(input:focus-visible) {
+  outline: 2px solid var(--red);
+  outline-offset: 2px;
+}
+
+/* Theme switch */
+
+.theme-switch {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1.5px solid var(--ink);
+  border-radius: 50%;
+  background: var(--paper);
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    transform 160ms var(--ease-out);
+}
+
+.theme-switch:hover {
+  background: var(--paper-2);
+}
+
+.theme-switch:active {
+  transform: scale(0.94);
+}
+
+.theme-switch svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Open question: slider vs stepper */
+
+.research {
+  margin-top: clamp(48px, 7vw, 80px);
+  padding: clamp(22px, 4vw, 40px);
+  border: 1.5px dashed var(--red);
+  border-radius: 24px;
+}
+
+.research__kicker {
+  font: 500 0.75rem var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+
+.research__title {
+  margin: 8px 0 24px;
+  font: 400 clamp(1.8rem, 4vw, 2.6rem) / 1.05 var(--font-display);
+}
+
+.research__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: clamp(24px, 4vw, 56px);
+}
+
+.research__story {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+
+.research__plan {
+  display: grid;
+  gap: 14px;
+  counter-reset: plan;
+}
+
+.research__plan li {
+  position: relative;
+  padding-left: 36px;
+  counter-increment: plan;
+}
+
+.research__plan li::before {
+  content: counter(plan);
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1.5px solid var(--ink);
+  border-radius: 50%;
+  font: 600 0.75rem var(--font-mono);
+}
+
+.research__note {
+  margin-top: 24px;
+  font: 0.8rem var(--font-mono);
+  color: var(--ink-2);
+}
+
+.counter {
+  margin-top: 6px;
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--screen);
+  border: 1.5px solid var(--ink);
+}
+
+.counter__title {
+  margin-bottom: 10px;
+  font: 500 0.75rem var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.counter__rows {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.counter__rows div {
+  display: grid;
+  gap: 2px;
+}
+
+.counter__rows dt {
+  font-size: 0.82rem;
+  color: var(--ink-2);
+}
+
+.counter__rows dd {
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+.counter__hint {
+  margin-top: 10px;
   font-size: 0.9rem;
 }
 
@@ -1190,7 +1506,6 @@ main {
 }
 
 .change__num {
-  grid-row: span 2;
   display: grid;
   place-items: center;
   width: 28px;
@@ -1201,53 +1516,32 @@ main {
   font: 600 0.8rem var(--font-mono);
 }
 
-.change__was {
+.change__body {
+  display: grid;
+  align-content: start;
+}
+
+.change__label {
+  font: 500 0.7rem var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--ink-2);
-  font-size: 0.92rem;
-  text-decoration: line-through;
-  text-decoration-color: var(--red);
-  text-decoration-thickness: 1.5px;
+}
+
+.change__label--now {
+  margin-top: 14px;
+  color: var(--red);
+}
+
+.change__was {
+  margin-top: 4px;
+  color: var(--ink-2);
+  font-size: 0.95rem;
 }
 
 .change__now {
+  margin-top: 4px;
   font-weight: 500;
-}
-
-.inbank {
-  margin-top: 12px;
-  max-width: 760px;
-}
-
-.inbank .subhead {
-  margin-top: clamp(40px, 6vw, 64px);
-  margin-bottom: 12px;
-}
-
-.inbank ul {
-  display: grid;
-  gap: 10px;
-  margin: 18px 0;
-}
-
-.inbank li {
-  padding-left: 22px;
-  position: relative;
-  line-height: 1.7;
-}
-
-.inbank li::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0.75em;
-  width: 10px;
-  height: 1.5px;
-  background: var(--red);
-}
-
-.inbank__note {
-  font: 0.8rem var(--font-mono);
-  color: var(--ink-2);
 }
 
 /* ─── 03 Spec ──────────────────────────────────────────────────────────── */
@@ -1494,9 +1788,18 @@ main {
   .lab {
     position: static;
   }
+
+  .research__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 @media (max-width: 560px) {
+  /* Keep the first line clear of the fixed theme switch. */
+  .hero .eyebrow {
+    padding-right: 56px;
+  }
+
   .section__head {
     grid-template-columns: minmax(0, 1fr);
   }

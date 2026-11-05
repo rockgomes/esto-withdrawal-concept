@@ -1,4 +1,4 @@
-import { useId, useState, type CSSProperties, type Dispatch } from 'react';
+import { useId, useRef, useState, type CSSProperties, type Dispatch } from 'react';
 import { AnimatedNumber } from './AnimatedNumber';
 import { PaymentChart } from './PaymentChart';
 import { costOf } from '../lib/money';
@@ -26,9 +26,23 @@ interface Props {
   locale: Locale;
   loading?: boolean;
   onSubmit: () => void;
+  /** Called once per deliberate change to the amount, so we can see how people set it. */
+  onAmountInput?: (source: AmountSource) => void;
 }
 
-export function WithdrawalScreen({ state, dispatch, locale, loading = false, onSubmit }: Props) {
+export type AmountSource = 'stepper' | 'slider' | 'typed';
+
+/** Slider events closer together than this are one drag, not separate adjustments. */
+const SLIDER_GESTURE_MS = 400;
+
+export function WithdrawalScreen({
+  state,
+  dispatch,
+  locale,
+  loading = false,
+  onSubmit,
+  onAmountInput,
+}: Props) {
   const id = useId();
 
   if (loading) return <LoadingScreen locale={locale} />;
@@ -53,7 +67,7 @@ export function WithdrawalScreen({ state, dispatch, locale, loading = false, onS
       </h3>
       <p className="screen__available">{t(locale, 'available', { limit: whole(state.limit) })}</p>
 
-      <AmountField state={state} dispatch={dispatch} locale={locale} />
+      <AmountField state={state} dispatch={dispatch} locale={locale} onAmountInput={onAmountInput} />
 
       <p className="screen__notice" role="status">
         {state.notice?.kind === 'overLimit' && t(locale, 'overLimit', { limit: whole(state.limit) })}
@@ -145,7 +159,8 @@ export function WithdrawalScreen({ state, dispatch, locale, loading = false, onS
   );
 }
 
-function AmountField({ state, dispatch, locale }: Omit<Props, 'onSubmit' | 'loading'>) {
+function AmountField({ state, dispatch, locale, onAmountInput }: Omit<Props, 'onSubmit' | 'loading'>) {
+  const lastSliderEvent = useRef(0);
   const id = useId();
   // While the field has focus, the customer's own text wins. It is parsed on blur or Enter.
   const [draft, setDraft] = useState<string | null>(null);
@@ -161,7 +176,10 @@ function AmountField({ state, dispatch, locale }: Omit<Props, 'onSubmit' | 'load
   const commit = () => {
     if (draft === null) return;
     const parsed = parseAmount(draft);
-    if (parsed !== null) dispatch({ type: 'setAmount', amount: parsed });
+    if (parsed !== null && parsed !== state.amount) {
+      dispatch({ type: 'setAmount', amount: parsed });
+      onAmountInput?.('typed');
+    }
     setDraft(null);
   };
 
@@ -173,7 +191,10 @@ function AmountField({ state, dispatch, locale }: Omit<Props, 'onSubmit' | 'load
           className="amount__step"
           aria-label={t(locale, 'decrease', { step })}
           disabled={state.amount <= EXAMPLE.minAmount}
-          onClick={() => dispatch({ type: 'step', direction: -1 })}
+          onClick={() => {
+            dispatch({ type: 'step', direction: -1 });
+            onAmountInput?.('stepper');
+          }}
         >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M5 12h14" />
@@ -208,7 +229,10 @@ function AmountField({ state, dispatch, locale }: Omit<Props, 'onSubmit' | 'load
           className="amount__step"
           aria-label={t(locale, 'increase', { step })}
           disabled={state.amount >= state.limit}
-          onClick={() => dispatch({ type: 'step', direction: 1 })}
+          onClick={() => {
+            dispatch({ type: 'step', direction: 1 });
+            onAmountInput?.('stepper');
+          }}
         >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M5 12h14M12 5v14" />
@@ -225,7 +249,12 @@ function AmountField({ state, dispatch, locale }: Omit<Props, 'onSubmit' | 'load
         step={EXAMPLE.step / 100}
         value={state.amount / 100}
         style={{ '--fill': `${fill}%` } as CSSProperties}
-        onChange={(event) => dispatch({ type: 'setAmount', amount: Number(event.target.value) * 100 })}
+        onChange={(event) => {
+          dispatch({ type: 'setAmount', amount: Number(event.target.value) * 100 });
+          const now = event.timeStamp;
+          if (now - lastSliderEvent.current > SLIDER_GESTURE_MS) onAmountInput?.('slider');
+          lastSliderEvent.current = now;
+        }}
       />
     </div>
   );

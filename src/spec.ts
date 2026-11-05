@@ -53,7 +53,7 @@ export const spec: SpecGroup[] = [
       'withdrawal_viewed { market }',
       'amount_changed { amount, source: slider | stepper | typed } (debounced)',
       'speed_selected { speed }, term_selected { months }',
-      'withdrawal_submitted { amount, speed, months, market }',
+      'withdrawal_submitted { amount, speed, months, market, adjustments: { stepper, slider, typed } }',
     ],
   },
 ];
