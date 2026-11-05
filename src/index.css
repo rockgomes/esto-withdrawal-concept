@@ -394,17 +394,15 @@ main {
 }
 
 .section__head {
-  display: grid;
-  grid-template-columns: 4.5rem minmax(0, 1fr);
-  column-gap: 16px;
   margin-bottom: clamp(32px, 5vw, 56px);
 }
 
+/* Above the title, so the title shares the content's left edge. */
 .section__index {
-  grid-row: span 2;
+  display: block;
   font: 500 0.9rem var(--font-mono);
   color: var(--red);
-  padding-top: 0.9rem;
+  margin-bottom: 10px;
 }
 
 .section__head h2 {
@@ -1664,7 +1662,6 @@ main {
 .built {
   display: grid;
   gap: 10px;
-  margin-left: calc(4.5rem + 16px);
   font-size: 1.05rem;
 }
 
@@ -1815,20 +1812,6 @@ main {
   /* Keep the first line clear of the theme switch. */
   .hero .eyebrow {
     padding-right: 56px;
-  }
-
-  .section__head {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .section__index {
-    grid-row: auto;
-    padding-top: 0;
-    margin-bottom: 6px;
-  }
-
-  .built {
-    margin-left: 0;
   }
 
   .loop {
