@@ -291,7 +291,8 @@ export default function App() {
                 </li>
                 <li>
                   <strong>Try.</strong> If the problem is real, test alternatives: quick amounts, bigger
-                  steps, or tapping the number to type it.
+                  steps, or tapping the number to type it. In parallel, we could test a version with no slider
+                  and no + and −, only a field to type the amount, and compare how people behave.
                 </li>
                 <li>
                   <strong>Measure.</strong> Adjustments per withdrawal, by input type. It is already in the
