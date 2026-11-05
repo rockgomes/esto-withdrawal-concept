@@ -378,7 +378,10 @@ export default function App() {
               Time: <Todo>add when finished</Todo>
             </li>
             <li>
-              Code: <Todo>GitHub link, once the repo exists</Todo>
+              Code:{' '}
+              <a href="https://github.com/rockgomes/esto-withdrawal-concept">
+                github.com/rockgomes/esto-withdrawal-concept
+              </a>
             </li>
             <li>
               LV and LT copy are machine drafts. I don’t speak either, so they need a native speaker first.
