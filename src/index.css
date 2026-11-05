@@ -1571,7 +1571,7 @@ main {
 
 .spec {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
   gap: 1.5px;
   border: 1.5px solid var(--ink);
   border-radius: 18px;
@@ -1580,26 +1580,79 @@ main {
 }
 
 .spec__group {
-  padding: 22px;
+  container-type: inline-size;
+  padding: 22px 22px 10px;
   background: var(--screen);
 }
 
 .spec__group h3 {
-  margin-bottom: 12px;
+  margin-bottom: 6px;
   font: 500 0.8rem var(--font-mono);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--red);
 }
 
-.spec__group ul {
+/* Label on the left, value on the right, a hairline between rows. */
+.spec__row {
   display: grid;
-  gap: 8px;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  column-gap: 16px;
+  padding: 12px 0;
   font-size: 0.95rem;
 }
 
-.spec__group li {
+.spec__row + .spec__row {
+  border-top: 1px solid var(--line);
+}
+
+.spec__row dt {
+  color: var(--ink-2);
   overflow-wrap: anywhere;
+}
+
+.spec__row dt code {
+  font: 500 0.82rem var(--font-mono);
+  color: var(--ink);
+}
+
+.spec__row dd {
+  display: grid;
+  gap: 6px;
+  overflow-wrap: anywhere;
+}
+
+.spec__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.spec__tag {
+  padding: 2px 8px;
+  border: 1px solid color-mix(in srgb, var(--ink-2) 55%, var(--screen));
+  border-radius: 6px;
+  font: 500 0.8rem/1.5 var(--font-mono);
+  white-space: nowrap;
+}
+
+.spec__note {
+  color: var(--ink-2);
+  font-size: 0.88rem;
+}
+
+/* Event names are long: name above its fields. */
+.spec__row--code {
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: 8px;
+}
+
+/* Narrow boxes: label above value. */
+@container (max-width: 360px) {
+  .spec__row {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 4px;
+  }
 }
 
 .copy {
