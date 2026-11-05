@@ -275,8 +275,8 @@ export default function App() {
                   the slider on the exact value they wanted.
                 </p>
                 <p>
-                  This prototype keeps both controls for now, because I would not redesign them on a hunch. It
-                  is the first thing I would research.
+                  This prototype keeps both controls for now, because I would not redesign them on a hunch.
+                  That’s something I would really like to research.
                 </p>
                 <InputCounter counts={inputs} />
               </div>
