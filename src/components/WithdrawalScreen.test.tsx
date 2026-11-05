@@ -36,7 +36,7 @@ describe('WithdrawalScreen', () => {
     render(<Harness />);
 
     expect(screen.getByRole('radio', { name: /1-3 business days/i })).toBeChecked();
-    expect(screen.queryByText('Instant payout fee')).not.toBeInTheDocument();
+    expect(screen.queryByText('Instant transfer fee')).not.toBeInTheDocument();
   });
 
   it('adds the fee to the summary only when the customer picks instant', async () => {
@@ -45,7 +45,7 @@ describe('WithdrawalScreen', () => {
 
     await user.click(screen.getByRole('radio', { name: /right now/i }));
 
-    expect(screen.getByText('Instant payout fee', { selector: 'dt' })).toBeInTheDocument();
+    expect(screen.getByText('Instant transfer fee', { selector: 'dt' })).toBeInTheDocument();
   });
 
   it('corrects a typed amount over the limit and explains why', async () => {

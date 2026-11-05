@@ -21,7 +21,7 @@ const en = {
   monthly: 'Monthly payment',
   months: 'for {n} months',
   interest: 'Interest',
-  fee: 'Instant payout fee',
+  fee: 'Instant transfer fee',
   totalCost: 'Cost of this withdrawal',
   totalBack: 'Total you pay back',
   planLabel: 'Payment plan',

@@ -28,7 +28,7 @@ export const findings: Finding[] = [
     issue:
       '“Instant transfer” (19.90 €) is already switched on. The user needs to tap that toggle to find out that there’s a free option.',
     why: 'Instant payout is a fair, useful service. But when people notice the fee late, it feels like a trick, and a fair 19.90 € becomes a support ticket. As a clear choice, the people who need speed still pay for it, and feel good about it.',
-    fix: 'Speed is two equal choices with the price on each. Free is selected first.',
+    fix: 'Two options side by side, each with its price: “In 1-3 business days” (free) and “Right now” (19.90 €). The free one is selected when the screen opens.',
   },
   {
     id: 'nextMonthOnly',
