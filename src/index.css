@@ -1,14 +1,14 @@
 /* ─── Tokens ─────────────────────────────────────────────────────────────
-   The world: a designer's review sheet. Grey paper, ink, and one
+   The world: a designer's review sheet. White paper, ink, and one
    redline colour for everything that is a finding or a decision. */
 
 :root {
-  --paper: #e8e8e8;
-  --paper-2: #dddddd;
-  --paper-3: #d2d2d2;
+  --paper: #ffffff;
+  --paper-2: #f2f2f2;
+  --paper-3: #e4e4e4;
   --ink: #111111;
   --ink-2: #525252;
-  --line: #c4c4c4;
+  --line: #d4d4d4;
   --red: #c2341a;
   --on-red: #ffffff;
   /* ESTO green, sampled from their app. Used only inside the prototype screen. */
