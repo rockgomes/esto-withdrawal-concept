@@ -25,3 +25,6 @@ dist-ssr
 
 # Private reference screenshots (personal account data, not for the repo)
 reference/
+
+# Local agent tooling
+.claude/
