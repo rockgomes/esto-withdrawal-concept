@@ -293,7 +293,11 @@ a {
   /* No non-scaling-stroke here: it would measure the dash in screen pixels and break pathLength. */
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
-  animation: draw 900ms var(--ease-draw) 1.5s forwards;
+  /* Hidden until it draws: a zero-length line still paints its round cap as a dot. */
+  opacity: 0;
+  animation:
+    draw 900ms var(--ease-draw) 1.5s forwards,
+    fade-in 1ms linear 1.5s forwards;
 }
 
 .hero__lede {
@@ -494,6 +498,8 @@ main {
   /* Both are inherited by the shapes inside, so animating the group draws them. */
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
+  /* Hidden until it draws: a zero-length line still paints its round cap as a dot. */
+  opacity: 0;
 }
 
 .redline__pin {
@@ -510,7 +516,9 @@ main {
 }
 
 .before.is-drawn .redline__mark {
-  animation: draw 700ms var(--ease-draw) forwards;
+  animation:
+    draw 700ms var(--ease-draw) forwards,
+    fade-in 1ms linear forwards;
   animation-delay: inherit;
 }
 

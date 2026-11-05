@@ -43,7 +43,9 @@ export function Loop() {
           );
         })}
         {!reduced && (
-          <circle className="loop__signal" r={5}>
+          // Hidden until the motion starts. Before that it has no position and sits at 0,0.
+          <circle className="loop__signal" r={5} opacity={0}>
+            <set attributeName="opacity" to="1" begin="1.8s" fill="freeze" />
             <animateMotion dur="9s" begin="1.8s" repeatCount="indefinite" rotate="auto">
               <mpath href="#loop-path" />
             </animateMotion>
