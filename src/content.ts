@@ -20,7 +20,7 @@ export const findings: Finding[] = [
   {
     id: 'maxDefault',
     issue: 'The amount starts at the full limit. The slider opens all the way to the right.',
-    why: 'Cleo, Shopee and Zopa start the amount well below the limit.',
+    why: 'Bigbank, Inbank, Cleo, Shopee and Zopa all start the amount below the limit, not at the end of the slider.',
     fix: 'It starts at a modest amount. Going higher is the customer’s choice, not the default.',
   },
   {
