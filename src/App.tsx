@@ -4,7 +4,6 @@ import { ExternalLink } from './components/ExternalLink';
 import { BeforeSchematic } from './components/BeforeSchematic';
 import { Loop } from './components/Loop';
 import { ThemeSwitch } from './components/ThemeSwitch';
-import { Todo } from './components/Todo';
 import { WithdrawalScreen, type AmountSource } from './components/WithdrawalScreen';
 import { findings, type FindingId } from './content';
 import { withViewTransition } from './hooks/motion';
@@ -126,9 +125,10 @@ export default function App() {
             </span>
           </h1>
           <p className="hero__lede">
-            ESTO’s withdrawal screen works, but it asks people to trust numbers they cannot fully see. I
-            rebuilt it so the full cost is clear, speed is an honest choice, and the numbers read the same in
-            all three markets. Less doubt, fewer support tickets, more people who finish.
+            ESTO’s withdrawal screen shows only next month’s payment before asking the user to commit to it. I
+            rebuilt it so the full cost is clear, the free transfer is selected by default, and the numbers
+            read the same in all three markets. My assumption here is that we need to work on trust in order
+            to increase the number of successful applications and possibly reduce support tickets.
           </p>
           <p className="hero__byline">
             Rock Gomes · Product designer ·{' '}
@@ -148,8 +148,8 @@ export default function App() {
 
         <section id="prototype" className="section" aria-labelledby="prototype-title">
           <SectionHead index="02" id="prototype-title" title="Prototype">
-            Live and clickable. Drag the amount, switch the speed and the term, change the market. Then run
-            the edge cases.
+            Live and clickable. Drag the amount, pick when you need the money and the term, change the market.
+            Then run the edge cases.
           </SectionHead>
 
           <div className="proto">
@@ -281,7 +281,7 @@ export default function App() {
                 </p>
                 <p>
                   This prototype keeps both controls for now, because I would not redesign them on a hunch.
-                  That’s something I would really like to research.
+                  That’s something I would like to research.
                 </p>
                 <InputCounter counts={inputs} />
               </div>
@@ -313,7 +313,7 @@ export default function App() {
 
         <section id="spec" className="section" aria-labelledby="spec-title">
           <SectionHead index="03" id="spec-title" title="Spec">
-            What an engineer needs to build the real thing. Short on purpose.
+            What an engineer needs to build the real thing.
           </SectionHead>
           <div className="spec">
             {spec.map((group) => (
@@ -332,7 +332,7 @@ export default function App() {
 
         <section id="numbers" className="section" aria-labelledby="numbers-title">
           <SectionHead index="04" id="numbers-title" title="Numbers">
-            Success defined before building. I don’t have ESTO’s baselines, so there are no made-up targets
+            I defined success before building. I don’t have ESTO’s baselines, so there are no made-up targets
             here.
           </SectionHead>
           <div className="metrics">
@@ -372,9 +372,7 @@ export default function App() {
             on every push.
           </SectionHead>
           <ul className="built">
-            <li>
-              Time: <Todo>add when finished</Todo>
-            </li>
+            <li>Time: about 2.5 hours, from first idea to live site.</li>
             <li>
               Code:{' '}
               <ExternalLink href="https://github.com/rockgomes/esto-withdrawal-concept">

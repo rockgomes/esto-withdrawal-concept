@@ -8,7 +8,7 @@ By Rock Gomes, product designer. Portfolio: [rockgomes.com](https://www.rockgome
 The page runs the loop from the job post on one real screen:
 
 1. **Problem.** Five findings from the current screen, drawn as redlines over a wireframe (not a screenshot).
-2. **Prototype.** A live withdrawal screen. Drag the amount, pick the speed and the term, switch between EN, ET, LV and LT. A "Try to break it" panel pushes it into its edge cases: over the limit, under the minimum, limit used up, slow network, longest copy, 320px phone.
+2. **Prototype.** A live withdrawal screen. Drag the amount, pick when you need the money and the term, switch between EN, ET, LV and LT. An edge cases panel puts it into states that often break: over the limit, under the minimum, limit used up, slow network, longest copy, 320px phone.
 3. **Spec.** The handover an engineer would need, copyable as Markdown.
 4. **Numbers.** How success would be measured, with no made-up baselines.
 
@@ -46,7 +46,7 @@ CI runs the same steps on every push and pull request.
 Decisions worth knowing:
 
 - **One grouping rule for three markets.** CLDR writes `2000 €` in Estonian and Latvian but `2 000 €` in Lithuanian. The formatter forces `useGrouping: 'always'` so all three match, and a test locks it in.
-- **Free is the default.** The paid instant payout is an equal, visible choice, never pre-selected.
+- **Free is the default.** “Right now” (19.90 €) is never pre-selected.
 - **Corrections are never silent.** Out-of-range input is fixed and the screen says why.
 - **Motion has a still version.** Every animation respects `prefers-reduced-motion`. Big state changes use the View Transitions API where the browser has it.
 

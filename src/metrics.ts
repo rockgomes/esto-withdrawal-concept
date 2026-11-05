@@ -24,7 +24,7 @@ export const KIND_LABEL: Record<MetricKind, string> = {
   primary: 'Primary',
   guardrail: 'Guardrail',
   research: 'Research',
-  trade: 'The honest trade',
+  trade: 'Trade-off',
 };
 
 export const metrics: Metric[] = [
@@ -34,7 +34,7 @@ export const metrics: Metric[] = [
     body: 'Share of people who open the screen and finish a withdrawal. Clear cost should not scare them off.',
     unit: '%',
     formula: [{ tracked: 'withdrawal_submitted' }, '÷', { tracked: 'withdrawal_viewed' }],
-    cadence: 'Weekly, per market. Watched over time, not as one number.',
+    cadence: 'Weekly, per market. Watched week by week.',
   },
   {
     kind: 'primary',
@@ -55,7 +55,7 @@ export const metrics: Metric[] = [
   {
     kind: 'guardrail',
     name: 'Repayment on time',
-    body: 'First three instalments paid on time. People who saw the full plan should repay better, not worse.',
+    body: 'First three instalments paid on time. People who saw the full plan should repay at least as well.',
     unit: '%',
     formula: ['first 3 instalments on time', '÷', { tracked: 'withdrawal_submitted' }],
     cadence: 'Monthly, by withdrawal cohort.',
@@ -63,7 +63,7 @@ export const metrics: Metric[] = [
   {
     kind: 'guardrail',
     name: 'Support contacts about fees',
-    body: 'Fewer “why was I charged?” tickets is the trust signal.',
+    body: 'Fewer “why was I charged?” tickets means people saw the fee before paying.',
     unit: 'per 1 000',
     formula: ['fee tickets', '÷', { tracked: 'withdrawal_submitted' }, '× 1 000'],
     cadence: 'Weekly, per market.',
