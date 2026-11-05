@@ -5,6 +5,8 @@ import { useInView } from '../hooks/useInView';
 interface Props {
   active: FindingId | null;
   onActivate: (id: FindingId | null) => void;
+  /** Start fully drawn, without waiting to scroll into view. */
+  drawn?: boolean;
 }
 
 /** Each redline: the mark drawn over the schematic, and where its number pin sits. */
@@ -23,8 +25,9 @@ const REDLINES: Record<FindingId, { mark: ReactNode; pin: [number, number] }> = 
  * A wireframe of the current screen, described rather than copied, with the
  * findings drawn over it as designer redlines.
  */
-export function BeforeSchematic({ active, onActivate }: Props) {
-  const [ref, inView] = useInView<HTMLDivElement>();
+export function BeforeSchematic({ active, onActivate, drawn = false }: Props) {
+  const [ref, seen] = useInView<HTMLDivElement>();
+  const inView = drawn || seen;
 
   return (
     <div ref={ref} className={`before ${inView ? 'is-drawn' : ''} ${active ? 'has-active' : ''}`}>

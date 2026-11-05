@@ -1,8 +1,9 @@
-import { useEffect, useReducer, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useReducer, useRef, useState, type ReactNode, type Ref } from 'react';
 import { KIND_LABEL, metrics } from './metrics';
 import { ExternalLink } from './components/ExternalLink';
 import { BeforeSchematic } from './components/BeforeSchematic';
 import { Loop } from './components/Loop';
+import { PageLoop } from './components/PageLoop';
 import { ThemeSwitch } from './components/ThemeSwitch';
 import { WithdrawalScreen, type AmountSource } from './components/WithdrawalScreen';
 import { findings, type FindingId } from './content';
@@ -62,6 +63,7 @@ export default function App() {
   const [inputs, setInputs] = useState<InputCounts>({ stepper: 0, slider: 0, typed: 0 });
   const [toast, setToast] = useState<string | null>(null);
   const [activeFinding, setActiveFinding] = useState<FindingId | null>(null);
+  const top = useRef<HTMLElement>(null);
   const slowTimer = useRef<number | undefined>(undefined);
   const toastTimer = useRef<number | undefined>(undefined);
 
@@ -110,39 +112,11 @@ export default function App() {
       </a>
       <ThemeSwitch />
 
-      <header className="hero">
-        <div className="hero__text">
-          <p className="eyebrow">
-            Application · Product Builder · <span className="eyebrow__flag">Unofficial concept</span>
-          </p>
-          <h1 className="hero__title">
-            One loop,{' '}
-            <span className="hero__shipped">
-              shipped.
-              <svg viewBox="0 0 220 24" aria-hidden="true" preserveAspectRatio="none">
-                <path d="M4 16 C 60 6, 140 6, 216 14" pathLength={1} />
-              </svg>
-            </span>
-          </h1>
-          <p className="hero__lede">
-            ESTO’s withdrawal screen shows only next month’s payment before asking the user to commit to it. I
-            rebuilt it so the full cost is clear, the free transfer is selected by default, and the numbers
-            read the same in all three markets. My assumption here is that we need to work on trust in order
-            to increase the number of successful applications and possibly reduce support tickets.
-          </p>
-          <p className="hero__byline">
-            Rock Gomes · Product designer ·{' '}
-            <ExternalLink href="https://www.rockgomes.com">rockgomes.com</ExternalLink>
-          </p>
-        </div>
-        <Loop />
-      </header>
+      <Hero ref={top} />
 
       <main>
         <section id="problem" className="section" aria-labelledby="problem-title">
-          <SectionHead index="01" id="problem-title" title="Problem">
-            I opened the withdrawal screen in my own account, on mobile and desktop. Five things stood out.
-          </SectionHead>
+          <ProblemHead id="problem-title" />
           <BeforeSchematic active={activeFinding} onActivate={setActiveFinding} />
         </section>
 
@@ -396,7 +370,59 @@ export default function App() {
           fees in the prototype are examples.
         </p>
       </footer>
+
+      <PageLoop start={top}>
+        <ThemeSwitch />
+        <Hero />
+        <main>
+          <section className="section">
+            <ProblemHead />
+            <BeforeSchematic active={null} onActivate={() => {}} drawn />
+          </section>
+        </main>
+      </PageLoop>
     </>
+  );
+}
+
+/** The top of the page. Rendered twice: once for real, once as the loop's copy. */
+function Hero({ ref }: { ref?: Ref<HTMLElement> }) {
+  return (
+    <header ref={ref} className="hero">
+      <div className="hero__text">
+        <p className="eyebrow">
+          Application · Product Builder · <span className="eyebrow__flag">Unofficial concept</span>
+        </p>
+        <h1 className="hero__title">
+          One loop,{' '}
+          <span className="hero__shipped">
+            shipped.
+            <svg viewBox="0 0 220 24" aria-hidden="true" preserveAspectRatio="none">
+              <path d="M4 16 C 60 6, 140 6, 216 14" pathLength={1} />
+            </svg>
+          </span>
+        </h1>
+        <p className="hero__lede">
+          ESTO’s withdrawal screen shows only next month’s payment before asking the user to commit to it. I
+          rebuilt it so the full cost is clear, the free transfer is selected by default, and the numbers read
+          the same in all three markets. My assumption here is that we need to work on trust in order to
+          increase the number of successful applications and possibly reduce support tickets.
+        </p>
+        <p className="hero__byline">
+          Rock Gomes · Product designer ·{' '}
+          <ExternalLink href="https://www.rockgomes.com">rockgomes.com</ExternalLink>
+        </p>
+      </div>
+      <Loop />
+    </header>
+  );
+}
+
+function ProblemHead({ id }: { id?: string }) {
+  return (
+    <SectionHead index="01" id={id} title="Problem">
+      I opened the withdrawal screen in my own account, on mobile and desktop. Five things stood out.
+    </SectionHead>
   );
 }
 
@@ -437,7 +463,7 @@ function SectionHead({
   children,
 }: {
   index: string;
-  id: string;
+  id?: string;
   title: string;
   children: ReactNode;
 }) {

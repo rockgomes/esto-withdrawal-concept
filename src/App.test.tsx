@@ -98,3 +98,15 @@ describe('outside links', () => {
     });
   });
 });
+
+describe('page loop', () => {
+  it('hides the copy of the top from screen readers and the keyboard', () => {
+    const { container } = render(<App />);
+    const copy = container.querySelector('.page-loop')!;
+
+    expect(copy).toHaveAttribute('aria-hidden', 'true');
+    expect(copy).toHaveAttribute('inert');
+    expect(screen.getAllByRole('heading', { name: /one loop/i })).toHaveLength(1);
+    expect(container.querySelectorAll('#problem')).toHaveLength(1);
+  });
+});

@@ -1856,3 +1856,13 @@ main {
     font-size: 0.9rem;
   }
 }
+
+/* ─── Page loop ────────────────────────────────────────────────────────── */
+
+/* The top of the page again, after the footer. See PageLoop. Taller than one
+   screen, so a big scroll at the very end still has room to continue. */
+.page-loop {
+  position: relative;
+  height: 150lvh;
+  overflow: clip;
+}
