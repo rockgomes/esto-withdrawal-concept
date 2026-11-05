@@ -128,7 +128,9 @@ export default function App() {
             rebuilt it so the full cost is clear, speed is an honest choice, and the numbers read the same in
             all three markets. Less doubt, fewer support tickets, more people who finish.
           </p>
-          <p className="hero__byline">Rock Gomes · Product designer</p>
+          <p className="hero__byline">
+            Rock Gomes · Product designer · <a href="https://www.rockgomes.com">rockgomes.com</a>
+          </p>
         </div>
         <Loop />
       </header>
@@ -392,7 +394,8 @@ export default function App() {
 
       <footer className="footer">
         <p>
-          Rock Gomes · <a href="mailto:rock@rockgomes.com">rock@rockgomes.com</a>
+          Rock Gomes · <a href="https://www.rockgomes.com">rockgomes.com</a> ·{' '}
+          <a href="mailto:rock@rockgomes.com">rock@rockgomes.com</a>
         </p>
         <p className="footer__legal">
           Unofficial concept for a job application. Not affiliated with or endorsed by ESTO. All rates and

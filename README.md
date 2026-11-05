@@ -3,9 +3,11 @@
 An unofficial concept for the ESTO **Product Builder** application: the credit-line
 withdrawal screen, redesigned and built as a working prototype.
 
+By Rock Gomes, product designer. Portfolio: [rockgomes.com](https://www.rockgomes.com)
+
 The page runs the loop from the job post on one real screen:
 
-1. **Problem.** Six findings from the current screen, drawn as redlines over a wireframe (not a screenshot).
+1. **Problem.** Five findings from the current screen, drawn as redlines over a wireframe (not a screenshot).
 2. **Prototype.** A live withdrawal screen. Drag the amount, pick the speed and the term, switch between EN, ET, LV and LT. A "Try to break it" panel pushes it into its edge cases: over the limit, under the minimum, limit used up, slow network, longest copy, 320px phone.
 3. **Spec.** The handover an engineer would need, copyable as Markdown.
 4. **Numbers.** How success would be measured, with no made-up baselines.
