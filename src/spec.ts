@@ -1,18 +1,8 @@
 import { EXAMPLE } from './lib/withdrawal';
 
-export interface SpecRow {
-  label: string;
-  /** Plain text, or a list of exact values shown as tags. */
-  value: string | string[];
-  /** Render the label as code, for event names. */
-  code?: boolean;
-  /** A short aside after the value, such as a scope note. */
-  note?: string;
-}
-
 export interface SpecGroup {
   title: string;
-  rows: SpecRow[];
+  items: string[];
 }
 
 const euros = (cents: number) => `${cents / 100} €`;
@@ -21,86 +11,56 @@ const euros = (cents: number) => `${cents / 100} €`;
 export const spec: SpecGroup[] = [
   {
     title: 'Defaults',
-    rows: [
-      {
-        label: 'Amount',
-        value: `${euros(EXAMPLE.defaultAmount)}, or the limit if lower.`,
-        note: 'Replace with the median withdrawal once we have it.',
-      },
-      { label: 'Speed', value: 'Free. Instant transfer is never pre-selected.' },
-      { label: 'Term', value: '12 months.' },
+    items: [
+      `Amount starts at ${euros(EXAMPLE.defaultAmount)} (or the limit, if lower). Replace with the median withdrawal once we have it.`,
+      'Speed starts on the free payout. The instant payout is never pre-selected.',
+      'Term starts at 12 months.',
     ],
   },
   {
     title: 'Amount rules',
-    rows: [
-      { label: 'Minimum', value: euros(EXAMPLE.minAmount) },
-      { label: 'Step', value: euros(EXAMPLE.step) },
-      { label: 'Maximum', value: 'The available limit.' },
-      { label: 'Typed input', value: ['1500', '1 500', '1500,50', '1.500', '1,500.50'] },
-      { label: 'Out of range', value: 'Corrected, with an inline message that says why. Never silently.' },
+    items: [
+      `Minimum ${euros(EXAMPLE.minAmount)}, step ${euros(EXAMPLE.step)}, maximum is the available limit.`,
+      'Typed input accepts “1500”, “1 500”, “1500,50”, “1.500” and “1,500.50”.',
+      'Out-of-range input is corrected, and an inline message says why. Never silently.',
     ],
   },
   {
     title: 'Cost display',
-    rows: [
-      { label: 'Show', value: ['monthly payment', 'term', 'interest', 'fee', 'total paid back'] },
-      { label: 'Update', value: 'On every change.' },
-      { label: 'Money', value: 'Integer cents. The last instalment absorbs rounding, so the plan adds up.' },
+    items: [
+      'Show monthly payment, term, interest, fee and total paid back. Update on every change.',
+      'All money is integer cents. The last instalment absorbs rounding, so the plan adds up exactly.',
     ],
   },
   {
     title: 'Formatting',
-    rows: [
-      { label: 'Method', value: 'Intl.NumberFormat with useGrouping: "always".' },
-      { label: 'Output', value: ['2 000 €', '19,90 €'], note: 'Same in ET, LV and LT.' },
-      { label: 'Precision', value: 'Whole euros for amounts and limits. Cents for payments and costs.' },
+    items: [
+      'Intl.NumberFormat with useGrouping: "always". ET, LV and LT all render “2 000 €” and “19,90 €”.',
+      'Whole euros for amounts and limits, cents for payments and costs.',
     ],
   },
   {
     title: 'States',
-    rows: [
-      { label: 'Loading', value: 'Skeleton. All controls disabled. No value shown until it is real.' },
-      { label: 'Empty', value: 'Limit fully used. Explain why. No clickable submit.' },
-      {
-        label: 'Error',
-        value: 'Limit request fails. Keep the screen and offer retry.',
-        note: 'Not in this prototype.',
-      },
+    items: [
+      'Loading: skeleton, all controls disabled, no value shown until it is real.',
+      'Empty: limit fully used. Explain why, no clickable submit.',
+      'Error (not in this prototype): limit request fails. Keep the screen, offer retry.',
     ],
   },
   {
     title: 'Tracking',
-    rows: [
-      { label: 'withdrawal_viewed', code: true, value: ['market'] },
-      {
-        label: 'amount_changed',
-        code: true,
-        value: ['amount', 'source'],
-        note: 'source is slider, stepper or typed. Debounced.',
-      },
-      { label: 'speed_selected', code: true, value: ['speed'] },
-      { label: 'term_selected', code: true, value: ['months'] },
-      {
-        label: 'withdrawal_submitted',
-        code: true,
-        value: ['amount', 'speed', 'months', 'market', 'adjustments'],
-        note: 'adjustments counts stepper, slider and typed changes.',
-      },
+    items: [
+      'withdrawal_viewed { market }',
+      'amount_changed { amount, source: slider | stepper | typed } (debounced)',
+      'speed_selected { speed }, term_selected { months }',
+      'withdrawal_submitted { amount, speed, months, market, adjustments: { stepper, slider, typed } }',
     ],
   },
 ];
 
-const markdownValue = (value: SpecRow['value']) =>
-  typeof value === 'string' ? value : value.map((v) => `\`${v}\``).join(', ');
-
 export function specAsMarkdown(): string {
-  const body = spec.map((group) => {
-    const rows = group.rows.map((row) => {
-      const label = row.code ? `\`${row.label}\`` : `**${row.label}:**`;
-      return `- ${label} ${markdownValue(row.value)}${row.note ? ` ${row.note}` : ''}`;
-    });
-    return `## ${group.title}\n\n${rows.join('\n')}`;
-  });
+  const body = spec.map(
+    (group) => `## ${group.title}\n\n${group.items.map((item) => `- ${item}`).join('\n')}`,
+  );
   return ['# Withdrawal screen: handover spec', ...body].join('\n\n') + '\n';
 }

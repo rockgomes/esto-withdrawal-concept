@@ -319,27 +319,11 @@ export default function App() {
             {spec.map((group) => (
               <div key={group.title} className="spec__group">
                 <h3>{group.title}</h3>
-                <dl>
-                  {group.rows.map((row) => (
-                    <div key={row.label} className={`spec__row ${row.code ? 'spec__row--code' : ''}`}>
-                      <dt>{row.code ? <code>{row.label}</code> : row.label}</dt>
-                      <dd>
-                        {typeof row.value === 'string' ? (
-                          row.value
-                        ) : (
-                          <span className="spec__tags">
-                            {row.value.map((v) => (
-                              <code key={v} className="spec__tag">
-                                {v}
-                              </code>
-                            ))}
-                          </span>
-                        )}
-                        {row.note && <span className="spec__note">{row.note}</span>}
-                      </dd>
-                    </div>
+                <ul>
+                  {group.items.map((item) => (
+                    <li key={item}>{item}</li>
                   ))}
-                </dl>
+                </ul>
               </div>
             ))}
           </div>
@@ -364,7 +348,7 @@ export default function App() {
                       typeof part === 'string' ? (
                         <span key={i}>{part}</span>
                       ) : (
-                        <code key={i} className="spec__tag">
+                        <code key={i} className="metric__tag">
                           {part.tracked}
                         </code>
                       ),
