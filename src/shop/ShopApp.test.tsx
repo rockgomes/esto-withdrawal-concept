@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ShopApp from './ShopApp';
@@ -143,6 +143,24 @@ describe('shop prototype', () => {
 
     // The real balance card does not change.
     expect(screen.getByLabelText('Your credit limit')).toHaveTextContent('1 180 €');
+
+    // The boxes are connected. A month in box 2 moves the limit in box 1.
+    fireEvent.change(within(box).getByRole('slider', { name: 'Month to look at' }), {
+      target: { value: '60' },
+    });
+    expect(within(box).getByText('After month 60')).toBeInTheDocument();
+    expect(within(box).getByText(/In use/)).toHaveTextContent('360 €');
+
+    // The way to pay in box 3 redraws the invoices in box 2.
+    await user.click(within(box).getByRole('button', { name: 'Pay more' }));
+    expect(within(box).getByText('Today')).toBeInTheDocument();
+    expect(within(box).getByRole('img', { name: /when you finish in 12 months/ })).toBeInTheDocument();
+    fireEvent.change(within(box).getByRole('slider', { name: 'Month to look at' }), {
+      target: { value: '24' },
+    });
+    expect(within(box).getByText(/no invoice/)).toBeInTheDocument();
+    expect(within(box).getByText(/In use/)).toHaveTextContent('0 €');
+    await user.click(within(box).getByRole('button', { name: 'Only the lowest payment' }));
 
     for (let i = 0; i < 4; i++) await user.click(within(box).getByRole('button', { name: /^Pay back 200/ }));
     expect(within(box).getByText(/Nothing is in use/)).toBeInTheDocument();

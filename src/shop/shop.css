@@ -2066,32 +2066,48 @@ h2.page-title {
 .chart {
   display: flex;
   align-items: flex-end;
-  gap: 4px;
+  gap: 2px;
   height: 120px;
 }
 
 .chart-col {
+  position: relative;
   flex: 1;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
+  align-items: flex-end;
   height: 100%;
-  gap: 4px;
-  font-size: 10px;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
+}
+
+.chart-col.is-at::after {
+  content: '';
+  position: absolute;
+  inset: -4px -1px -4px -1px;
+  border-radius: 3px;
+  box-shadow: 0 0 0 1.5px var(--ink);
 }
 
 .chart-bar {
+  position: relative;
   display: flex;
   flex-direction: column;
   width: 100%;
-  min-height: 3px;
-  border-radius: 3px;
+  min-height: 2px;
+  border-radius: 2px;
   overflow: hidden;
-  gap: 1px;
   transition: height 0.45s var(--ease);
+}
+
+.chart-ghost {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 2px;
+  background: var(--line);
+}
+
+.dot.chart-ghost {
+  position: static;
 }
 
 .part-fixed {
@@ -2103,20 +2119,47 @@ h2.page-title {
 }
 
 .chart-axis {
-  margin: 2px 0 8px;
+  display: flex;
+  gap: 2px;
+  margin: 4px 0 8px;
   font-size: 10px;
   color: var(--muted);
-  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-axis span {
+  flex: 1;
+  min-width: 0;
+  overflow: visible;
+  white-space: nowrap;
+}
+
+.scrub {
+  display: block;
+  margin-top: 12px;
+  font-size: 13px;
+}
+
+.mini-when {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.way {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.versus .is-on dt {
+  color: var(--ink);
+  font-weight: 600;
 }
 
 .explain-step .legend {
   margin: 0;
-}
-
-.explain-fact {
-  margin: auto 0 0;
-  padding-top: 12px;
-  font-size: 13px;
 }
 
 .versus {
