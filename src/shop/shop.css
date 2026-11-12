@@ -1013,140 +1013,504 @@ input[type='range'] {
   animation: pop 0.4s var(--ease) both;
 }
 
-/* ─── Start page and the prototype label ────────────────────────────── */
+/* ─── Start page ────────────────────────────────────────────────────── */
 
 .start {
-  max-width: 920px;
+  max-width: 1160px;
   margin: 0 auto;
-  padding: 56px 20px 32px;
+  padding: 48px 24px 32px;
 }
 
-.start-kicker {
-  margin: 0 0 12px;
+.start-by {
+  margin: 0 0 20px;
   color: var(--muted);
 }
 
 .start h1 {
   margin: 0;
-  font-size: clamp(34px, 7vw, 56px);
-  line-height: 1.02;
-  letter-spacing: -0.035em;
+  font-size: clamp(40px, 8.4vw, 104px);
+  font-weight: 600;
+  line-height: 0.95;
+  letter-spacing: -0.045em;
 }
 
 .start-lead {
-  max-width: 60ch;
-  margin: 18px 0 0;
-  font-size: 17px;
+  max-width: 46ch;
+  margin: 24px 0 0;
+  font-size: clamp(17px, 1.6vw, 21px);
+  line-height: 1.35;
 }
 
-.start-today {
-  margin: 32px 0 0;
-  padding: 20px;
-  border-radius: var(--radius);
-  background: var(--card);
-}
+/* The limit as a price ruler. Products stand on it at their price. */
 
-.start-today h2 {
-  margin: 0 0 8px;
-}
-
-.start-today ul {
-  margin: 0;
-  padding-left: 18px;
-  list-style: disc;
-}
-
-.start-today li + li {
-  margin-top: 6px;
-}
-
-.start-h {
-  margin: 36px 0 12px;
-}
-
-.phase-cards {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.phase-card {
+.ruler-wrap {
   display: flex;
   flex-direction: column;
-  padding: 20px;
-  border-radius: var(--radius);
-  background: var(--card);
+  margin-top: 40px;
 }
 
-.phase-card h3 {
-  margin: 10px 0 14px;
-  font-size: 22px;
-  letter-spacing: -0.02em;
-}
-
-.phase-card .btn {
-  margin-top: auto;
-}
-
-.phase-n {
-  align-self: flex-start;
+.ruler {
+  position: relative;
+  height: 244px;
   margin: 0;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: var(--green-soft);
-  color: var(--green-ink);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.flow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 0 0 16px;
   padding: 0;
   list-style: none;
 }
 
-.flow li {
+.stand {
+  position: absolute;
+  left: calc(var(--x) * 1%);
+  bottom: 6px;
+  translate: -50% 0;
+  animation: drop 0.5s var(--ease) both;
+  animation-delay: calc(var(--i) * 70ms + 500ms);
+}
+
+.stand.is-high {
+  bottom: 126px;
+}
+
+.stand-btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  border: 0;
+  background: none;
+  border-radius: 14px;
+}
+
+.stand.is-high .stand-btn::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 1px;
+  height: 126px;
+  background: var(--seg-used);
+  z-index: -1;
+}
+
+.stand-pic {
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  padding: 8px;
+  border-radius: 14px;
+  background: var(--tile);
+  transition:
+    box-shadow 0.15s,
+    translate 0.2s var(--ease);
+}
+
+.stand-pic img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.stand-btn:hover .stand-pic,
+.stand-btn[aria-pressed='true'] .stand-pic {
+  box-shadow: 0 0 0 2px var(--ink);
+  translate: 0 -4px;
+}
+
+.stand-name {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.stand-price {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--bg);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.stand.is-over .stand-pic img {
+  filter: grayscale(1);
+  opacity: 0.5;
+}
+
+.stand.is-over .stand-price {
+  color: var(--muted);
+}
+
+.ruler-cut {
+  display: none;
+}
+
+.band {
+  display: flex;
+  height: 88px;
+  border-radius: 18px;
+  overflow: hidden;
+  animation: grow 0.7s var(--ease) both;
+}
+
+.band-free,
+.band-used {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  border-radius: 8px;
-  background: var(--bg);
-  font-size: 13px;
+  min-width: 0;
+  padding: 0 20px;
+  white-space: nowrap;
+}
+
+.band-free {
+  background: var(--green);
+  color: #0a0a0a;
+  font-size: clamp(22px, 3vw, 36px);
+  letter-spacing: -0.03em;
+}
+
+.band-used {
+  background: var(--seg-used);
   font-weight: 600;
 }
 
-.flow li + li::before {
-  content: '→';
-  margin-left: -2px;
+.ticks {
+  position: relative;
+  height: 22px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
   color: var(--muted);
-  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.ticks li {
+  position: absolute;
+  translate: -50% 0;
+  white-space: nowrap;
+}
+
+.ticks li:first-child {
+  translate: 0 0;
+}
+
+.ticks li:last-child {
+  translate: -100% 0;
+}
+
+.ruler-now {
+  max-width: 70ch;
+  min-height: 3.2em;
+  margin: 16px 0 0;
+  font-size: 16px;
+}
+
+.ruler-note {
+  max-width: 78ch;
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+
+/* The two phases. */
+
+.phases {
+  margin-top: 72px;
+}
+
+.phases h2 {
+  margin: 0;
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+}
+
+.phases-today {
+  max-width: 60ch;
+  margin: 12px 0 32px;
+  font-size: 16px;
+}
+
+.phase {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: 24px 48px;
+  align-items: start;
+  padding: 32px 0 40px;
+  border-top: 1.5px solid var(--ink);
+}
+
+.phase-n {
+  margin: 0;
+  font-weight: 600;
+  color: var(--green-strong);
+}
+
+.phase h3 {
+  margin: 4px 0 20px;
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
 }
 
 .phase-facts {
-  margin: 0 0 20px;
+  margin: 0 0 24px;
 }
 
-.phase-facts div + div {
-  margin-top: 10px;
+.phase-facts div {
+  display: grid;
+  grid-template-columns: 124px minmax(0, 1fr);
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
 }
 
 .phase-facts dt {
-  font-size: 12px;
   color: var(--muted);
 }
 
 .phase-facts dd {
-  margin: 2px 0 0;
+  margin: 0;
 }
 
-.start-note {
-  margin: 20px 4px 0;
+.demo {
+  padding: 20px;
+  border-radius: 18px;
+  background: var(--card);
+}
+
+.demo-title {
+  display: block;
+  margin: 0 0 12px;
+  font-weight: 600;
+}
+
+.demo-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--ink);
+  border-radius: 12px;
+  background: var(--card);
+  font-size: 16px;
+}
+
+.demo-results {
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  min-height: 190px;
+}
+
+.demo-results li + li {
+  border-top: 1px solid var(--line);
+}
+
+.demo-results button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  padding: 12px 6px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  text-align: left;
+}
+
+.demo-results button:hover {
+  background: var(--card-2);
+}
+
+.demo-side {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.demo-row-name {
+  margin: 14px 0 6px;
+  font-size: 13px;
   color: var(--muted);
 }
+
+.steps-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0 0 4px;
+  padding: 0;
+  list-style: none;
+}
+
+.steps-row li {
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--bg);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.steps-row li.is-cut {
+  background: none;
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.steps-row li.is-pay {
+  background: var(--green);
+  color: #0a0a0a;
+}
+
+.steps-row + .small {
+  margin: 14px 0 0;
+}
+
+@media (max-width: 860px) {
+  .start {
+    padding: 32px 16px 24px;
+  }
+
+  /* The ruler turns into a list: lowest price first, with the limit as a line in it. */
+  .ruler-wrap {
+    margin-top: 28px;
+  }
+
+  .band {
+    order: -1;
+    height: 64px;
+  }
+
+  .band-free,
+  .band-used {
+    padding: 0 12px;
+  }
+
+  .band-used {
+    font-size: 12px;
+  }
+
+  .ticks {
+    display: none;
+  }
+
+  .ruler {
+    height: auto;
+    margin-top: 12px;
+  }
+
+  .stand,
+  .stand.is-high {
+    position: static;
+    translate: none;
+    border-left: 6px solid var(--green);
+    padding-left: 10px;
+  }
+
+  .stand.is-over {
+    border-left-color: var(--seg-used);
+  }
+
+  .stand.is-high .stand-btn::after {
+    display: none;
+  }
+
+  .stand-btn {
+    flex-direction: row;
+    gap: 12px;
+    width: 100%;
+    padding: 6px 0;
+    text-align: left;
+  }
+
+  .stand-pic {
+    flex: none;
+    width: 56px;
+    height: 56px;
+    padding: 6px;
+  }
+
+  .stand-btn:hover .stand-pic,
+  .stand-btn[aria-pressed='true'] .stand-pic {
+    translate: none;
+  }
+
+  .stand-name {
+    position: static;
+    flex: 1;
+    width: auto;
+    height: auto;
+    clip-path: none;
+    white-space: normal;
+    font-weight: 500;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  .stand-price {
+    flex: none;
+    font-size: 13px;
+  }
+
+  .ruler-cut {
+    display: block;
+    margin: 6px 0 6px -16px;
+    padding: 6px 0 6px 16px;
+    border-top: 2px solid var(--ink);
+    font-weight: 700;
+  }
+
+  .ruler-now {
+    display: none;
+  }
+
+  .phases {
+    margin-top: 48px;
+  }
+
+  .phase {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .phase-facts div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+
+  .steps-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .demo-results button {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .demo-side {
+    align-items: flex-start;
+    text-align: left;
+  }
+}
+
+/* ─── Prototype label ───────────────────────────────────────────────── */
 
 .proto-tag {
   display: flex;
@@ -1392,6 +1756,22 @@ input[type='range'] {
 
 /* ─── Motion ────────────────────────────────────────────────────────── */
 
+@keyframes drop {
+  from {
+    opacity: 0;
+    transform: translateY(-28px);
+  }
+}
+
+@keyframes grow {
+  from {
+    clip-path: inset(0 100% 0 0 round 18px);
+  }
+  to {
+    clip-path: inset(0 0 0 0 round 18px);
+  }
+}
+
 @keyframes rise {
   from {
     opacity: 0;
@@ -1456,14 +1836,6 @@ input[type='range'] {
 }
 
 @media (max-width: 800px) {
-  .phase-cards {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .start {
-    padding: 32px 12px 24px;
-  }
-
   .app {
     display: block;
     padding: 0 0 24px;

@@ -89,7 +89,7 @@ describe('shop prototype', () => {
     expect(screen.queryByRole('button', { name: /with your credit line/ })).not.toBeInTheDocument();
   });
 
-  it('starts on a page that explains the two phases and opens the prototype', async () => {
+  it('starts on a page that shows real products on the limit, and opens the prototype', async () => {
     window.history.replaceState(null, '', '/');
     const user = userEvent.setup();
     render(<ShopApp />);
@@ -97,13 +97,17 @@ describe('shop prototype', () => {
     expect(screen.getByRole('heading', { name: 'Credit line at checkout' })).toBeInTheDocument();
     expect(screen.queryByRole('navigation', { name: 'Main' })).not.toBeInTheDocument();
 
+    // The small search on the page runs on the real catalog.
+    const result = await screen.findByRole('button', { name: /Apple iPhone 17 256GB.*month/ });
+    await user.click(result);
+    expect(window.location.search).toBe('?phase=1');
+    expect(await screen.findByRole('link', { name: /Go to ONOFF to buy/ })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'About the concept' }));
     await user.click(screen.getByRole('button', { name: 'Open the Phase 2 prototype' }));
     expect(window.location.search).toBe('?phase=2');
     expect(await screen.findByRole('searchbox')).toBeInTheDocument();
     expect(screen.getByText('Prototype, Phase 2: Credit line at checkout')).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: 'About the concept' }));
-    expect(screen.getByRole('heading', { name: 'Shop with your credit line' })).toBeInTheDocument();
   });
 
   it('watches a price and shows an alert when the price goes down', async () => {

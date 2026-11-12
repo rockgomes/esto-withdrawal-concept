@@ -66,7 +66,7 @@ A product search for ESTO credit-line customers. It shows real products from EST
 
 - **Real data.** `scripts/build-catalog.mjs` reads the open product feeds that stores publish in the Hinnavaatlus price list format. It matches the same product across stores by barcode (GTIN) and writes `public/data/catalog.json`.
 - **Daily refresh.** `.github/workflows/refresh-catalog.yml` runs the script once a day and commits the result. Real price changes are saved to `public/data/history.json`.
-- **Two phases.** A start page explains them, and each one opens the prototype (`?phase=1` or `?phase=2`). Phase 1: search, the customer's own monthly price, and price alerts, then the real store page. Phase 2: "Credit line" as a new method on ESTO's checkout page.
+- **Start page.** Real products stand on the customer's limit at their price. Then the two phases, each with a small live demo and a button that opens the prototype (`?phase=1` or `?phase=2`). Phase 1: search, the customer's own monthly price, and price alerts, then the real store page. Phase 2: "Credit line" as a new method on ESTO's checkout page.
 - **Example data.** The customer's limit and amount in use are examples. The 37.10% rate is the highest interest rate in ESTO's own credit line example. The phase 2 payment is simulated, and the store checkout page is a stand-in. The page says so.
 
 | File                      | What it holds                                                                                    |

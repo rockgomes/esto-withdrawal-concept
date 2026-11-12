@@ -112,9 +112,11 @@ export default function ShopApp() {
   const [route, navigate] = useRoute();
   const [notice, setNotice] = useState('');
   const [phase, setPhase] = useState<Phase | null>(readPhase);
-  const pickPhase = (next: Phase | null) => {
+  const pickPhase = (next: Phase | null, productId?: string) => {
     setPhase(next);
-    writePhase(next);
+    writePhase(next, productId);
+    // The route listens to the hash, so tell it the address changed.
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
     window.scrollTo({ top: 0 });
   };
 
@@ -148,11 +150,10 @@ export default function ShopApp() {
     setNotice(`"${name}" is not part of this concept. Shop and Dashboard are.`);
 
   if (phase === null) {
-    const ready = load.status === 'ready' ? load.catalog : null;
     return (
       <Start
-        products={ready ? ready.products.length : null}
-        stores={ready ? ready.stores.length : null}
+        catalog={load.status === 'ready' ? load.catalog : null}
+        account={DEMO_ACCOUNT}
         onOpen={pickPhase}
       />
     );
