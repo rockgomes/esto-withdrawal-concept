@@ -1,0 +1,972 @@
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { formatMoney, formatWhole } from '../lib/format';
+import type { Cents } from '../lib/money';
+import {
+  loadCatalog,
+  lowestPrice,
+  stockLabel,
+  type Catalog,
+  type Offer,
+  type PriceHistory,
+  type Product,
+} from './catalog';
+import {
+  DEFAULT_MONTHS,
+  DEMO_ACCOUNT,
+  LIMIT_CHOICES,
+  MAX_MONTHS,
+  MIN_MONTHS,
+  fits,
+  freeLimit,
+  minimumPayment,
+  plan,
+  type Account,
+} from './credit';
+import { NO_FILTERS, search, type Filters, type SortKey } from './search';
+import {
+  priceDrops,
+  readWatches,
+  saveWatches,
+  toggleWatch,
+  withSimulatedDrop,
+  type PriceDrop,
+  type Watch,
+} from './watch';
+
+const money = (cents: Cents) => formatMoney(cents, 'et');
+const whole = (cents: Cents) => formatWhole(cents, 'et');
+const QUICK_SEARCHES = [
+  'iPhone',
+  'Galaxy S',
+  'MacBook',
+  'PlayStation',
+  'Garmin',
+  'Dyson',
+  'AirPods',
+  'Televiisor',
+];
+const PAGE_SIZE = 24;
+
+function formatDate(iso: string): string {
+  return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(
+    new Date(iso),
+  );
+}
+
+function formatDateTime(iso: string): string {
+  return new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(iso));
+}
+
+interface Purchase {
+  product: Product;
+  offer: Offer;
+  months: number;
+  monthly: Cents;
+}
+
+type Load =
+  | { status: 'loading' }
+  | { status: 'error'; message: string }
+  | { status: 'ready'; catalog: Catalog; history: PriceHistory };
+
+function useHashRoute(): [string | null, (id: string | null) => void] {
+  const read = () => {
+    const match = window.location.hash.match(/^#\/p\/(.+)$/);
+    return match ? decodeURIComponent(match[1]) : null;
+  };
+  const [id, setId] = useState<string | null>(read);
+  useEffect(() => {
+    const onChange = () => setId(read());
+    window.addEventListener('hashchange', onChange);
+    return () => window.removeEventListener('hashchange', onChange);
+  }, []);
+  const go = (next: string | null) => {
+    window.location.hash = next ? `#/p/${encodeURIComponent(next)}` : '#/';
+    window.scrollTo({ top: 0 });
+  };
+  return [id, go];
+}
+
+export default function ShopApp() {
+  const [load, setLoad] = useState<Load>({ status: 'loading' });
+  const [attempt, setAttempt] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoad({ status: 'loading' });
+    loadCatalog().then(
+      (data) => !cancelled && setLoad({ status: 'ready', ...data }),
+      (error: unknown) =>
+        !cancelled &&
+        setLoad({ status: 'error', message: error instanceof Error ? error.message : 'Unknown error' }),
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [attempt]);
+
+  return (
+    <div className="shop">
+      <header className="topbar">
+        <a className="brand" href="#/">
+          <span className="brand-mark" aria-hidden="true" />
+          Shop with your limit
+        </a>
+        <span className="concept-tag">Unofficial concept for ESTO</span>
+      </header>
+      {load.status === 'loading' && (
+        <main className="page" aria-busy="true">
+          <p className="status" role="status">
+            Loading the store feeds…
+          </p>
+          <div className="grid" aria-hidden="true">
+            {Array.from({ length: 8 }, (_, i) => (
+              <div className="card skeleton" key={i} />
+            ))}
+          </div>
+        </main>
+      )}
+      {load.status === 'error' && (
+        <main className="page">
+          <div className="panel" role="alert">
+            <h1>The product data did not load</h1>
+            <p className="muted">{load.message}</p>
+            <button className="btn" onClick={() => setAttempt((n) => n + 1)}>
+              Try again
+            </button>
+          </div>
+        </main>
+      )}
+      {load.status === 'ready' && <Shop catalog={load.catalog} history={load.history} />}
+    </div>
+  );
+}
+
+function Shop({ catalog: realCatalog, history }: { catalog: Catalog; history: PriceHistory }) {
+  const [account, setAccount] = useState<Account>(DEMO_ACCOUNT);
+  const [query, setQuery] = useState('');
+  const [filters, setFilters] = useState<Filters>(NO_FILTERS);
+  const [fitsOnly, setFitsOnly] = useState(false);
+  const [sort, setSort] = useState<SortKey>('relevance');
+  const [shown, setShown] = useState(PAGE_SIZE);
+  const [preview, setPreview] = useState<Cents | null>(null);
+  const [watches, setWatches] = useState<Watch[]>(readWatches);
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [simulated, setSimulated] = useState<string | null>(null);
+  const [productId, go] = useHashRoute();
+
+  const catalog = useMemo(
+    () => (simulated ? withSimulatedDrop(realCatalog, simulated, 8) : realCatalog),
+    [realCatalog, simulated],
+  );
+  const free = freeLimit(account);
+  const today = new Date().toISOString().slice(0, 10);
+
+  useEffect(() => saveWatches(watches), [watches]);
+
+  const results = useMemo(
+    () => search(catalog.products, query, { ...filters, maxPrice: fitsOnly ? free : null }, sort),
+    [catalog, query, filters, fitsOnly, free, sort],
+  );
+  const drops = useMemo(() => priceDrops(watches, catalog), [watches, catalog]);
+  const product = productId ? catalog.byId.get(productId) : undefined;
+
+  const onWatch = (p: Product) => setWatches((w) => toggleWatch(w, p, today));
+  const isWatched = (p: Product) => watches.some((w) => w.id === p.id);
+  const onBought = (purchase: Purchase) => {
+    setPurchases((list) => [purchase, ...list]);
+    setAccount((a) => ({ ...a, used: a.used + purchase.offer.price }));
+    setPreview(null);
+  };
+  const changeQuery = (next: string) => {
+    setQuery(next);
+    setShown(PAGE_SIZE);
+  };
+
+  return (
+    <>
+      <LimitMeter account={account} preview={preview} />
+      <main className="page">
+        {productId && !product && (
+          <div className="panel">
+            <h1>This product is not in today's feeds</h1>
+            <p className="muted">A store may have removed it or sold the last one.</p>
+            <button className="btn" onClick={() => go(null)}>
+              Back to search
+            </button>
+          </div>
+        )}
+        {product && (
+          <ProductView
+            key={product.id}
+            product={product}
+            account={account}
+            history={history}
+            watch={watches.find((w) => w.id === product.id)}
+            onWatch={() => onWatch(product)}
+            onBack={() => go(null)}
+            onPreview={setPreview}
+            onBought={onBought}
+          />
+        )}
+        {!productId && (
+          <>
+            <DropList drops={drops} account={account} onOpen={go} />
+            <section className="panel search-panel" aria-labelledby="search-title">
+              <h1 id="search-title">What do you want to buy?</h1>
+              <p className="muted">
+                {catalog.products.length.toLocaleString('en-GB')} real products from {catalog.stores.length}{' '}
+                ESTO partner stores. Each price below is your own monthly price.
+              </p>
+              <label className="searchbox">
+                <span className="visually-hidden">Search products</span>
+                <SearchIcon />
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(e) => changeQuery(e.target.value)}
+                  placeholder="Try iPhone 17, Garmin, or pesumasin"
+                  autoComplete="off"
+                  enterKeyHint="search"
+                />
+              </label>
+              <div className="chips" aria-label="Quick searches">
+                {QUICK_SEARCHES.map((q) => (
+                  <button key={q} className="chip" onClick={() => changeQuery(q)}>
+                    {q}
+                  </button>
+                ))}
+              </div>
+              <div className="toolbar">
+                <Toggle on={fitsOnly} onChange={setFitsOnly}>
+                  Fits my limit
+                </Toggle>
+                <Toggle on={filters.compare} onChange={(compare) => setFilters((f) => ({ ...f, compare }))}>
+                  Sold by 2+ stores
+                </Toggle>
+                <Toggle on={filters.inStock} onChange={(inStock) => setFilters((f) => ({ ...f, inStock }))}>
+                  In stock now
+                </Toggle>
+                <label className="sort">
+                  <span className="muted">Sort</span>
+                  <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
+                    <option value="relevance">Best match</option>
+                    <option value="price-asc">Lowest price</option>
+                    <option value="price-desc">Highest price</option>
+                  </select>
+                </label>
+              </div>
+            </section>
+
+            <p className="status" role="status" aria-live="polite">
+              {results.length === 0
+                ? 'No product matches. Try a shorter search, or turn a filter off.'
+                : `${results.length.toLocaleString('en-GB')} ${results.length === 1 ? 'product' : 'products'}${query ? ` for “${query}”` : ''}`}
+            </p>
+            <div className="grid">
+              {results.slice(0, shown).map((p) => (
+                <ProductCard
+                  key={p.id}
+                  product={p}
+                  account={account}
+                  watched={isWatched(p)}
+                  onOpen={() => go(p.id)}
+                  onPreview={setPreview}
+                />
+              ))}
+            </div>
+            {results.length > shown && (
+              <div className="more">
+                <button className="btn ghost" onClick={() => setShown((n) => n + PAGE_SIZE)}>
+                  Show more
+                </button>
+              </div>
+            )}
+
+            <WatchList watches={watches} catalog={catalog} account={account} onOpen={go} />
+            <PurchaseList purchases={purchases} />
+          </>
+        )}
+        <About
+          catalog={realCatalog}
+          account={account}
+          onLimit={(limit) => setAccount((a) => ({ ...a, limit }))}
+          watches={watches}
+          simulated={simulated}
+          onSimulate={setSimulated}
+        />
+      </main>
+    </>
+  );
+}
+
+function LimitMeter({ account, preview }: { account: Account; preview: Cents | null }) {
+  const free = freeLimit(account);
+  const take = preview === null ? 0 : Math.min(preview, free);
+  const over = preview !== null && preview > free;
+  const pct = (cents: Cents) => `${(cents / account.limit) * 100}%`;
+
+  return (
+    <div className="meter" aria-label="Your credit limit">
+      <div className="meter-inner">
+        <div className="meter-row">
+          <div>
+            <span className="meter-label">Free limit</span>
+            <strong className="meter-value">{whole(free)}</strong>
+            <span className="muted"> of {whole(account.limit)}</span>
+          </div>
+          <p className={`meter-after${over ? ' is-over' : ''}`} aria-live="polite">
+            {preview === null
+              ? `Example customer, ${account.rate.toLocaleString('et-EE')}% interest`
+              : over
+                ? `${whole(preview - free)} over your free limit`
+                : `After this purchase: ${whole(free - preview)} free`}
+          </p>
+        </div>
+        <div className="track" aria-hidden="true">
+          <i className="used" style={{ width: pct(account.used) }} />
+          <i className={`ghost${over ? ' is-over' : ''}`} style={{ width: pct(take) }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Toggle({
+  on,
+  onChange,
+  children,
+}: {
+  on: boolean;
+  onChange: (on: boolean) => void;
+  children: ReactNode;
+}) {
+  return (
+    <button className="toggle" aria-pressed={on} onClick={() => onChange(!on)}>
+      {children}
+    </button>
+  );
+}
+
+function ProductImage({ product, size }: { product: Product; size: 'card' | 'hero' }) {
+  const [failed, setFailed] = useState(false);
+  if (!product.image || failed) {
+    return (
+      <div className={`pic pic-${size} pic-empty`} aria-hidden="true">
+        {(product.brand || product.name).slice(0, 1)}
+      </div>
+    );
+  }
+  return (
+    <div className={`pic pic-${size}`}>
+      <img
+        src={product.image}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        referrerPolicy="no-referrer"
+        onError={() => setFailed(true)}
+      />
+    </div>
+  );
+}
+
+function FitBadge({ price, account }: { price: Cents; account: Account }) {
+  return fits(price, account) ? (
+    <span className="badge ok">Fits your limit</span>
+  ) : (
+    <span className="badge no">Above your free limit</span>
+  );
+}
+
+function ProductCard({
+  product,
+  account,
+  watched,
+  onOpen,
+  onPreview,
+}: {
+  product: Product;
+  account: Account;
+  watched: boolean;
+  onOpen: () => void;
+  onPreview: (price: Cents | null) => void;
+}) {
+  const price = lowestPrice(product);
+  const stores = product.offers.length;
+  return (
+    <button
+      className="card product"
+      onClick={onOpen}
+      onMouseEnter={() => onPreview(price)}
+      onMouseLeave={() => onPreview(null)}
+      onFocus={() => onPreview(price)}
+      onBlur={() => onPreview(null)}
+    >
+      <ProductImage product={product} size="card" />
+      <span className="product-body">
+        <span className="product-name">{product.name}</span>
+        <span className="monthly">
+          {money(plan(price, account).monthly)}
+          <small> / month for you</small>
+        </span>
+        <span className="muted small">
+          {money(price)} at {product.offers[0].store.name}
+          {stores > 1 ? `, ${stores} stores` : ''}
+        </span>
+        <span className="badges">
+          <FitBadge price={price} account={account} />
+          {watched && <span className="badge watch">Watching</span>}
+        </span>
+      </span>
+    </button>
+  );
+}
+
+function ProductView({
+  product,
+  account,
+  history,
+  watch,
+  onWatch,
+  onBack,
+  onPreview,
+  onBought,
+}: {
+  product: Product;
+  account: Account;
+  history: PriceHistory;
+  watch: Watch | undefined;
+  onWatch: () => void;
+  onBack: () => void;
+  onPreview: (price: Cents | null) => void;
+  onBought: (purchase: Purchase) => void;
+}) {
+  const [offerIndex, setOfferIndex] = useState(0);
+  const [months, setMonths] = useState(DEFAULT_MONTHS);
+  const [buying, setBuying] = useState(false);
+  const [bought, setBought] = useState(false);
+  const heading = useRef<HTMLHeadingElement>(null);
+  const offer = product.offers[Math.min(offerIndex, product.offers.length - 1)];
+  const p = plan(offer.price, account, months);
+  const ok = bought || fits(offer.price, account);
+  const changes = history[product.id];
+
+  useEffect(() => heading.current?.focus(), []);
+  useEffect(() => {
+    // After the purchase the meter shows the new limit, not a preview.
+    onPreview(bought ? null : offer.price);
+    return () => onPreview(null);
+  }, [offer.price, bought, onPreview]);
+
+  return (
+    <article className="detail">
+      <button className="back" onClick={onBack}>
+        ← Back to search
+      </button>
+      <div className="detail-grid">
+        <section className="panel">
+          <ProductImage product={product} size="hero" />
+          <p className="muted small">{[product.brand, product.category].filter(Boolean).join(' · ')}</p>
+          <h1 ref={heading} tabIndex={-1}>
+            {product.name}
+          </h1>
+          <div className="badges">
+            {bought ? (
+              <span className="badge ok">Bought (simulated)</span>
+            ) : (
+              <FitBadge price={offer.price} account={account} />
+            )}
+          </div>
+          <button className="btn ghost watch-btn" aria-pressed={Boolean(watch)} onClick={onWatch}>
+            <BellIcon /> {watch ? 'Watching the price' : 'Tell me when the price goes down'}
+          </button>
+          {watch && (
+            <p className="muted small">
+              Watching since {formatDate(watch.since)}, from {money(watch.price)}. You see an alert here when
+              any store goes lower.
+            </p>
+          )}
+        </section>
+
+        <div>
+          <section className="panel" aria-labelledby="offers-title">
+            <h2 id="offers-title">
+              {product.offers.length === 1
+                ? 'One store sells this'
+                : `${product.offers.length} stores sell this`}
+            </h2>
+            <div role="radiogroup" aria-labelledby="offers-title">
+              {product.offers.map((o, i) => (
+                <button
+                  key={o.store.id}
+                  role="radio"
+                  aria-checked={i === offerIndex}
+                  className="offer"
+                  onClick={() => setOfferIndex(i)}
+                >
+                  <span>
+                    <strong>{o.store.name}</strong>
+                    {i === 0 && product.offers.length > 1 && <span className="badge ok">Lowest</span>}
+                    <span className="muted small offer-stock">{stockLabel(o.stock)}</span>
+                  </span>
+                  <span className="offer-price">
+                    <strong>{money(o.price)}</strong>
+                    <span className="muted small">
+                      {money(plan(o.price, account, months).monthly)} / month
+                    </span>
+                  </span>
+                </button>
+              ))}
+            </div>
+            <a className="store-link" href={offer.url} target="_blank" rel="noopener noreferrer">
+              See it at {offer.store.name} (opens the store) ↗
+            </a>
+          </section>
+
+          <section className="panel" aria-labelledby="plan-title">
+            <h2 id="plan-title">Your payment plan</h2>
+            <label className="slider">
+              <span>
+                Pay it off in <strong>{months} months</strong>
+              </span>
+              <input
+                type="range"
+                min={MIN_MONTHS}
+                max={MAX_MONTHS}
+                step={1}
+                value={months}
+                onChange={(e) => setMonths(Number(e.target.value))}
+              />
+            </label>
+            <dl className="calc">
+              <div>
+                <dt>Each month</dt>
+                <dd>{money(p.monthly)}</dd>
+              </div>
+              <div>
+                <dt>Cost of credit</dt>
+                <dd>{money(p.cost)}</dd>
+              </div>
+              <div>
+                <dt>You pay in total</dt>
+                <dd>{money(p.total)}</dd>
+              </div>
+            </dl>
+            <p className="muted small">
+              The lowest payment your credit line allows for this amount is{' '}
+              {money(minimumPayment(offer.price, account.rate))} a month. A fixed plan costs less interest.
+            </p>
+            <button className="btn buy" disabled={!ok || bought} onClick={() => setBuying(true)}>
+              {bought ? 'Bought (simulated)' : `Buy at ${offer.store.name} with your limit`}
+            </button>
+            {!ok && (
+              <p className="warn small">
+                This is {whole(offer.price - freeLimit(account))} over your free limit. You can still watch
+                the price.
+              </p>
+            )}
+          </section>
+
+          <section className="panel" aria-labelledby="history-title">
+            <h2 id="history-title">Price changes</h2>
+            {changes ? (
+              <ul className="history">
+                {Object.entries(changes).map(([storeId, points]) => (
+                  <li key={storeId}>
+                    <strong>
+                      {product.offers.find((o) => o.store.id === storeId)?.store.name ?? storeId}
+                    </strong>
+                    {points.map(([date, cents]) => (
+                      <span key={date} className="history-point">
+                        {formatDate(date)}: {money(cents)}
+                      </span>
+                    ))}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="muted small">
+                No price change recorded yet. The feeds are read once a day, and every change is saved from
+                then on.
+              </p>
+            )}
+          </section>
+        </div>
+      </div>
+      {buying && (
+        <BuySheet
+          product={product}
+          offer={offer}
+          months={months}
+          account={account}
+          onClose={() => setBuying(false)}
+          onDone={() => {
+            setBought(true);
+            onBought({ product, offer, months, monthly: p.monthly });
+          }}
+        />
+      )}
+    </article>
+  );
+}
+
+function BuySheet({
+  product,
+  offer,
+  months,
+  account,
+  onClose,
+  onDone,
+}: {
+  product: Product;
+  offer: Offer;
+  months: number;
+  account: Account;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const [step, setStep] = useState<'review' | 'signing' | 'done'>('review');
+  const box = useRef<HTMLDivElement>(null);
+  const p = plan(offer.price, account, months);
+  // The free limit shown after the purchase is fixed when the sheet opens.
+  const [freeAfter] = useState(() => freeLimit(account) - offer.price);
+
+  useEffect(() => {
+    box.current?.focus();
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  useEffect(() => {
+    if (step !== 'signing') return;
+    const timer = window.setTimeout(() => {
+      setStep('done');
+      onDone();
+    }, 1600);
+    return () => window.clearTimeout(timer);
+  }, [step, onDone]);
+
+  return (
+    <div className="modal" onClick={(e) => e.target === e.currentTarget && step !== 'signing' && onClose()}>
+      <div
+        className="sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="buy-title"
+        tabIndex={-1}
+        ref={box}
+      >
+        {step === 'review' && (
+          <>
+            <h2 id="buy-title">Check your purchase</h2>
+            <p className="muted small">{product.name}</p>
+            <dl className="lines">
+              <div>
+                <dt>Store</dt>
+                <dd>{offer.store.name}</dd>
+              </div>
+              <div>
+                <dt>Price</dt>
+                <dd>{money(offer.price)}</dd>
+              </div>
+              <div>
+                <dt>Plan</dt>
+                <dd>
+                  {months} × {money(p.monthly)}
+                </dd>
+              </div>
+              <div>
+                <dt>Cost of credit</dt>
+                <dd>{money(p.cost)}</dd>
+              </div>
+              <div>
+                <dt>Free limit after</dt>
+                <dd>{whole(freeAfter)}</dd>
+              </div>
+            </dl>
+            <p className="demo-note">Prototype: no order is made and no money moves.</p>
+            <div className="btns">
+              <button className="btn" onClick={() => setStep('signing')}>
+                Confirm with Smart-ID
+              </button>
+              <button className="btn ghost" onClick={onClose}>
+                Cancel
+              </button>
+            </div>
+          </>
+        )}
+        {step === 'signing' && (
+          <div className="center" role="status">
+            <h2 id="buy-title">Confirm in your Smart-ID app</h2>
+            <div className="spinner" aria-hidden="true" />
+            <p className="muted small">This step is simulated.</p>
+          </div>
+        )}
+        {step === 'done' && (
+          <div className="center">
+            <div className="tick" aria-hidden="true">
+              ✓
+            </div>
+            <h2 id="buy-title">Done. {offer.store.name} has your order.</h2>
+            <p className="muted">
+              ESTO pays the store. You pay ESTO {money(p.monthly)} a month for {months} months.
+            </p>
+            <p className="demo-note">Prototype: this order is simulated.</p>
+            <div className="btns">
+              <button className="btn" onClick={onClose}>
+                Close
+              </button>
+              <a className="btn ghost" href={offer.url} target="_blank" rel="noopener noreferrer">
+                Open the real product page ↗
+              </a>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DropList({
+  drops,
+  account,
+  onOpen,
+}: {
+  drops: PriceDrop[];
+  account: Account;
+  onOpen: (id: string) => void;
+}) {
+  if (drops.length === 0) return null;
+  return (
+    <section className="drops" aria-label="Price alerts">
+      {drops.map((d) => (
+        <button key={d.product.id} className="drop" onClick={() => onOpen(d.product.id)}>
+          <BellIcon />
+          <span>
+            <strong>Price went down {money(d.saved)}</strong>
+            <span className="drop-name">{d.product.name}</span>
+            <span className="small">
+              Now {money(d.now)} at {d.product.offers[0].store.name}, was {money(d.was)}.{' '}
+              {money(plan(d.now, account).monthly)} a month for you.{' '}
+              {fits(d.now, account) ? 'It fits your limit.' : ''}
+            </span>
+          </span>
+        </button>
+      ))}
+    </section>
+  );
+}
+
+function WatchList({
+  watches,
+  catalog,
+  account,
+  onOpen,
+}: {
+  watches: Watch[];
+  catalog: Catalog;
+  account: Account;
+  onOpen: (id: string) => void;
+}) {
+  if (watches.length === 0) return null;
+  return (
+    <section className="panel" aria-labelledby="watch-title">
+      <h2 id="watch-title">Prices you watch</h2>
+      <ul className="rows">
+        {watches.map((w) => {
+          const product = catalog.byId.get(w.id);
+          if (!product) {
+            return (
+              <li key={w.id} className="muted small">
+                A watched product is not in today's feeds.
+              </li>
+            );
+          }
+          const now = lowestPrice(product);
+          return (
+            <li key={w.id}>
+              <button className="row-link" onClick={() => onOpen(w.id)}>
+                <span>{product.name}</span>
+                <span className="row-side">
+                  <strong>{money(now)}</strong>
+                  <span className="muted small">
+                    {now < w.price
+                      ? `down from ${money(w.price)}`
+                      : now > w.price
+                        ? `up from ${money(w.price)}`
+                        : `same since ${formatDate(w.since)}`}
+                    {', '}
+                    {money(plan(now, account).monthly)} / month
+                  </span>
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+function PurchaseList({ purchases }: { purchases: Purchase[] }) {
+  if (purchases.length === 0) return null;
+  return (
+    <section className="panel" aria-labelledby="bought-title">
+      <h2 id="bought-title">Bought with your limit (simulated)</h2>
+      <ul className="rows">
+        {purchases.map((b, i) => (
+          <li key={i} className="row-static">
+            <span>
+              {b.product.name}
+              <span className="muted small"> at {b.offer.store.name}</span>
+            </span>
+            <span className="row-side">
+              <strong>{money(b.offer.price)}</strong>
+              <span className="muted small">
+                {b.months} × {money(b.monthly)}
+              </span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function About({
+  catalog,
+  account,
+  onLimit,
+  watches,
+  simulated,
+  onSimulate,
+}: {
+  catalog: Catalog;
+  account: Account;
+  onLimit: (limit: Cents) => void;
+  watches: Watch[];
+  simulated: string | null;
+  onSimulate: (id: string | null) => void;
+}) {
+  const watchedProducts = watches.map((w) => catalog.byId.get(w.id)).filter((p): p is Product => Boolean(p));
+  return (
+    <details className="panel about">
+      <summary>About this prototype: what is real, and the demo controls</summary>
+      <div className="about-grid">
+        <div>
+          <h3>Real</h3>
+          <ul>
+            <li>
+              Every product, price, picture, stock text, and link. They come from the product feeds that the
+              stores publish in the Hinnavaatlus price list format.
+            </li>
+            <li>The same product is matched across stores by its barcode (GTIN). No AI is used.</li>
+            <li>
+              The feeds were last read on {formatDateTime(catalog.generated)}. A job reads them once a day.
+            </li>
+            <li>The payment math: a standard fixed-payment loan calculation.</li>
+          </ul>
+          <h3>Example or simulated</h3>
+          <ul>
+            <li>
+              The customer: the limit, the amount in use, and the {account.rate.toLocaleString('et-EE')}%
+              rate.
+            </li>
+            <li>The purchase and the Smart-ID step. No order is made.</li>
+          </ul>
+          <p className="muted small">
+            This is an unofficial concept. It is not made by ESTO or by the stores. Product data belongs to
+            each store.
+          </p>
+        </div>
+        <div>
+          <h3>Store feeds in today's catalog</h3>
+          <table className="sources">
+            <thead>
+              <tr>
+                <th scope="col">Store</th>
+                <th scope="col">Rows in feed</th>
+              </tr>
+            </thead>
+            <tbody>
+              {catalog.stores.map((s) => {
+                const report = catalog.sources.find((r) => r.store === s.id);
+                return (
+                  <tr key={s.id}>
+                    <th scope="row">
+                      <a href={s.site} target="_blank" rel="noopener noreferrer">
+                        {s.name}
+                      </a>
+                    </th>
+                    <td>
+                      {report?.error
+                        ? 'Feed did not answer today'
+                        : (report?.rowsInFeed?.toLocaleString('en-GB') ?? 'not recorded')}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          <h3>Demo controls</h3>
+          <fieldset className="control">
+            <legend>Credit limit of the example customer</legend>
+            {LIMIT_CHOICES.map((limit) => (
+              <button
+                key={limit}
+                className="toggle"
+                aria-pressed={account.limit === limit}
+                disabled={limit < account.used}
+                onClick={() => onLimit(limit)}
+              >
+                {whole(limit)}
+              </button>
+            ))}
+          </fieldset>
+          <fieldset className="control">
+            <legend>Simulate a lower price in tomorrow's feed (8% less)</legend>
+            {watchedProducts.length === 0 && (
+              <p className="muted small">Watch a product first. Then you can test its price alert here.</p>
+            )}
+            {watchedProducts.map((p) => (
+              <button
+                key={p.id}
+                className="toggle"
+                aria-pressed={simulated === p.id}
+                onClick={() => onSimulate(simulated === p.id ? null : p.id)}
+              >
+                {p.name}
+              </button>
+            ))}
+          </fieldset>
+        </div>
+      </div>
+    </details>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" className="icon">
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </svg>
+  );
+}
+
+function BellIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" className="icon">
+      <path d="M6 9a6 6 0 1 1 12 0c0 6 2.5 7 2.5 7h-17S6 15 6 9" />
+      <path d="M10 20a2 2 0 0 0 4 0" />
+    </svg>
+  );
+}

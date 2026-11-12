@@ -59,3 +59,21 @@ speaker's review before anything like this ships.
 
 React 19, TypeScript, Vite, Vitest and Testing Library. Plain CSS with custom properties, no UI library.
 Built with [Claude Code](https://claude.com/claude-code).
+
+## Shop with your limit (second concept, at `/shop/`)
+
+A product search for ESTO credit-line customers. It shows real products from ESTO partner stores with the customer's own monthly price, compares stores, and sends a price alert.
+
+- **Real data.** `scripts/build-catalog.mjs` reads the open product feeds that stores publish in the Hinnavaatlus price list format. It matches the same product across stores by barcode (GTIN) and writes `public/data/catalog.json`.
+- **Daily refresh.** `.github/workflows/refresh-catalog.yml` runs the script once a day and commits the result. Real price changes are saved to `public/data/history.json`.
+- **Example data.** The customer (limit, amount in use, interest rate) and the purchase step are simulated. The page says so.
+
+| File                      | What it holds                                                                                    |
+| ------------------------- | ------------------------------------------------------------------------------------------------ |
+| `scripts/catalog-lib.mjs` | Feed parsing, barcode matching, the listing rules, and price history. Pure functions with tests. |
+| `src/shop/search.ts`      | Search, filters, and ranking.                                                                    |
+| `src/shop/credit.ts`      | Free limit, payment plan, and lowest allowed payment.                                            |
+| `src/shop/watch.ts`       | Price watch and price-drop alerts.                                                               |
+| `src/shop/ShopApp.tsx`    | The screens.                                                                                     |
+
+Run `node scripts/build-catalog.mjs` to refresh the catalog by hand. This is an unofficial concept. Product data belongs to each store.
