@@ -6,6 +6,8 @@ import {
   isHighUse,
   minimumPathInterest,
   minimumPayment,
+  paybackInterest,
+  paybackParts,
   plan,
 } from './credit';
 
@@ -20,6 +22,15 @@ describe('credit', () => {
   it('marks the limit as high in use from 80%', () => {
     expect(isHighUse({ ...DEMO_ACCOUNT, limit: 150_000, used: 119_999 })).toBe(false);
     expect(isHighUse({ ...DEMO_ACCOUNT, limit: 150_000, used: 120_000 })).toBe(true);
+  });
+
+  it('splits an invoice in a fixed part and interest on what is still owed', () => {
+    // 1 200 EUR at 12% in 12 months: 100 EUR a month, and 1% interest on what is still owed.
+    expect(paybackParts(120_000, 12, 12, 1)).toEqual({ fixed: 10_000, interest: 1_200, total: 11_200 });
+    expect(paybackParts(120_000, 12, 12, 12)).toEqual({ fixed: 10_000, interest: 100, total: 10_100 });
+    expect(paybackInterest(120_000, 12, 12)).toBe(7_800);
+    expect(paybackInterest(120_000, 12, 120)).toBe(minimumPathInterest(120_000, 12));
+    expect(paybackInterest(120_000, 12, 6)).toBeLessThan(paybackInterest(120_000, 12, 12));
   });
 
   it('makes a plan whose parts add up', () => {

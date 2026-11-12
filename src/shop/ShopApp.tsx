@@ -848,7 +848,6 @@ function ProductView({
                 See the real product page at {offer.store.name} ↗
               </a>
             )}
-
             {phase === 1 ? (
               <>
                 <a className="btn buy" href={offer.url} target="_blank" rel="noopener noreferrer">

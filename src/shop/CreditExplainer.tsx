@@ -2,14 +2,12 @@ import { useState } from 'react';
 import { formatMoney, formatWhole } from '../lib/format';
 import type { Cents } from '../lib/money';
 import {
-  MAX_MONTHS,
   MINIMUM_MONTHS,
   MIN_MONTHS,
   freeLimit,
   isHighUse,
-  lowestPaymentParts,
-  minimumPathInterest,
-  plan,
+  paybackInterest,
+  paybackParts,
   type Account,
 } from './credit';
 
@@ -18,23 +16,28 @@ const whole = (cents: Cents) => formatWhole(cents, 'et');
 
 const USE_STEP = 40_000;
 const PAY_STEP = 20_000;
-/** The months the chart shows, from the first invoice to the last. */
-const CHART_MONTHS = [1, 12, 24, 36, 48, 60, 72, 84, 96, 108, 120];
 
 /**
- * How a credit line works, as a small sandbox. The person uses a part of the
- * limit and pays a part back, and the three pictures follow: the limit, the
- * monthly invoice, and what paying more saves. Nothing here changes the account.
+ * How a credit line works, as a small sandbox. Box 1 sets the amount in use.
+ * Box 3 sets in how many months it is paid back, up to the 120 months of the
+ * lowest payments. Box 2 shows three invoices for those two choices: the
+ * first, the middle one, and the last. Nothing here changes the account.
  */
 export default function CreditExplainer({ account, onShop }: { account: Account; onShop: () => void }) {
   const [used, setUsed] = useState(account.used);
-  const [months, setMonths] = useState(12);
+  const [months, setMonths] = useState(MINIMUM_MONTHS);
   const sandbox: Account = { ...account, used };
   const free = freeLimit(sandbox);
-  const first = lowestPaymentParts(used, account.rate, 1);
-  const tallest = Math.max(first.total, 1);
-  const slowInterest = minimumPathInterest(used, account.rate);
-  const fast = plan(used, sandbox, months);
+  const middle = Math.max(1, Math.round(months / 2));
+  const invoices = [
+    { label: 'First invoice', month: 1 },
+    { label: 'Middle invoice', month: middle },
+    { label: 'Last invoice', month: months },
+  ].map((row) => ({ ...row, parts: paybackParts(used, account.rate, months, row.month) }));
+  const widest = Math.max(invoices[0].parts.total, 1);
+  const interest = paybackInterest(used, account.rate, months);
+  const longest = paybackInterest(used, account.rate, MINIMUM_MONTHS);
+  const isLongest = months === MINIMUM_MONTHS;
 
   return (
     <section className="explain" aria-labelledby="explain-title">
@@ -87,8 +90,8 @@ export default function CreditExplainer({ account, onShop }: { account: Account;
           <p className="explain-n">2</p>
           <h3>ESTO sends one invoice a month</h3>
           <p className="muted small">
-            The lowest payment is a fixed part of what you used, plus interest on what you still owe. So it
-            gets smaller every month.
+            An invoice has two parts. One part pays back what you used. The other part is interest on what you
+            still owe, so it gets smaller.
           </p>
           {used === 0 ? (
             <p className="explain-empty">
@@ -96,83 +99,85 @@ export default function CreditExplainer({ account, onShop }: { account: Account;
             </p>
           ) : (
             <>
-              <div
-                className="chart"
-                role="img"
-                aria-label={`Lowest payment each month. Month 1: ${money(first.total)}. Month 60: ${money(lowestPaymentParts(used, account.rate, 60).total)}. Month 120: ${money(lowestPaymentParts(used, account.rate, 120).total)}.`}
-              >
-                {CHART_MONTHS.map((m) => {
-                  const parts = lowestPaymentParts(used, account.rate, m);
-                  return (
-                    <div className="chart-col" key={m}>
-                      <div className="chart-bar" style={{ height: `${(parts.total / tallest) * 100}%` }}>
-                        <i className="part-interest" style={{ flexGrow: parts.interest }} />
-                        <i className="part-fixed" style={{ flexGrow: parts.fixed }} />
-                      </div>
-                      <span>{m}</span>
+              <ol className="invoices">
+                {invoices.map((row) => (
+                  <li key={row.label}>
+                    <p className="invoice-top">
+                      <span>
+                        {row.label}, month {row.month}
+                      </span>
+                      <strong>{money(row.parts.total)}</strong>
+                    </p>
+                    <div
+                      className="invoice-bar"
+                      style={{ width: `${Math.max(4, (row.parts.total / widest) * 100)}%` }}
+                      aria-hidden="true"
+                    >
+                      <i className="part-fixed" style={{ flexGrow: row.parts.fixed }} />
+                      <i className="part-interest" style={{ flexGrow: row.parts.interest }} />
                     </div>
-                  );
-                })}
-              </div>
-              <p className="chart-axis">Month</p>
+                    <p className="invoice-parts">
+                      {money(row.parts.fixed)} pays back, {money(row.parts.interest)} is interest
+                    </p>
+                  </li>
+                ))}
+              </ol>
               <ul className="legend">
                 <li>
-                  <i className="dot part-fixed" /> Fixed part {money(first.fixed)}
+                  <i className="dot part-fixed" /> Pays back what you used
                 </li>
                 <li>
-                  <i className="dot part-interest" /> Interest, {money(first.interest)} in month 1
+                  <i className="dot part-interest" /> Interest
                 </li>
               </ul>
-              <p className="explain-fact">
-                Month 1: <strong>{money(first.total)}</strong>. Month 120:{' '}
-                <strong>{money(lowestPaymentParts(used, account.rate, 120).total)}</strong>.
-              </p>
             </>
           )}
         </article>
 
         <article className="explain-step">
           <p className="explain-n">3</p>
-          <h3>You can pay more in any month</h3>
+          <h3>You choose how fast you pay it back</h3>
           <p className="muted small">
-            Paying more costs nothing extra. You finish sooner and pay less interest.
+            The slowest way is 120 months. Paying faster costs nothing extra, and you pay less interest.
           </p>
           {used === 0 ? (
-            <p className="explain-empty">Use a part of the limit in step 1 to see the numbers.</p>
+            <p className="explain-empty">Use a part of the limit in box 1 to see the numbers.</p>
           ) : (
             <>
               <label className="slider">
-                <span>
-                  Finish in <strong>{months} months</strong>, with {money(fast.monthly)} a month
+                <span className="pace">
+                  <span>
+                    Pay it back in <strong>{months} months</strong>
+                  </span>
+                  <span className="muted small">
+                    {isLongest
+                      ? 'This is the slowest way: only the lowest payments.'
+                      : 'Faster than the lowest payments.'}
+                  </span>
                 </span>
                 <input
                   type="range"
                   min={MIN_MONTHS}
-                  max={MAX_MONTHS}
+                  max={MINIMUM_MONTHS}
                   step={1}
                   value={months}
                   onChange={(e) => setMonths(Number(e.target.value))}
                 />
+                <span className="pace-ends" aria-hidden="true">
+                  <span>{MIN_MONTHS} months</span>
+                  <span>{MINIMUM_MONTHS} months</span>
+                </span>
               </label>
-              <dl className="versus">
-                <div>
-                  <dt>Only the lowest payments, {MINIMUM_MONTHS} months</dt>
-                  <dd>
-                    <i style={{ width: '100%' }} className="versus-slow" />
-                    <span>{whole(slowInterest)} interest</span>
-                  </dd>
-                </div>
-                <div>
-                  <dt>Paid off in {months} months</dt>
-                  <dd>
-                    <i
-                      style={{ width: `${Math.max(2, (fast.cost / Math.max(slowInterest, 1)) * 100)}%` }}
-                      className="versus-fast"
-                    />
-                    <span>{whole(fast.cost)} interest</span>
-                  </dd>
-                </div>
-              </dl>
+              <p className="invoice-top total">
+                <span>Interest you pay in total</span>
+                <strong>{whole(interest)}</strong>
+              </p>
+              <div className="total-track" aria-hidden="true">
+                <i style={{ width: `${Math.max(2, (interest / Math.max(longest, 1)) * 100)}%` }} />
+              </div>
+              <p className="invoice-parts wrap">
+                A full bar is {whole(longest)}, the interest over 120 months.
+              </p>
             </>
           )}
         </article>

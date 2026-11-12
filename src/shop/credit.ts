@@ -75,10 +75,29 @@ export function minimumPathInterest(amount: Cents, rate: number): Cents {
   return Math.round(interest);
 }
 
-/** The two parts of the lowest payment in one month, by ESTO's rule. */
-export function lowestPaymentParts(amount: Cents, rate: number, month: number) {
-  const fixed = amount / MINIMUM_MONTHS;
-  const stillOwed = (amount * (MINIMUM_MONTHS - month + 1)) / MINIMUM_MONTHS;
+/**
+ * The two parts of one monthly invoice when the amount is paid back in a
+ * number of months. One part pays back the amount: it is the same every
+ * month. The other part is interest on what is still owed. With 120 months
+ * this is ESTO's rule for the lowest payment.
+ */
+export function paybackParts(amount: Cents, rate: number, months: number, month: number) {
+  const fixed = amount / months;
+  const stillOwed = (amount * (months - month + 1)) / months;
   const interest = (stillOwed * rate) / 100 / 12;
   return { fixed: Math.round(fixed), interest: Math.round(interest), total: Math.round(fixed + interest) };
+}
+
+/** Interest paid in total when the amount is paid back in a number of months. */
+export function paybackInterest(amount: Cents, rate: number, months: number): Cents {
+  let interest = 0;
+  for (let month = 1; month <= months; month++) {
+    interest += (((amount * (months - month + 1)) / months) * rate) / 100 / 12;
+  }
+  return Math.round(interest);
+}
+
+/** The two parts of the lowest payment in one month, by ESTO's rule. */
+export function lowestPaymentParts(amount: Cents, rate: number, month: number) {
+  return paybackParts(amount, rate, MINIMUM_MONTHS, month);
 }

@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ShopApp from './ShopApp';
@@ -134,15 +134,23 @@ describe('shop prototype', () => {
     await user.click(await screen.findByRole('button', { name: 'Credit Line' }));
     const box = screen.getByRole('region', { name: 'How a credit line works' });
     expect(within(box).getByText(/In use/)).toHaveTextContent('320 €');
+    // It starts at the slowest way: 120 months, ESTO's lowest payments.
+    expect(within(box).getByText('First invoice, month 1').parentElement).toHaveTextContent('12,56 €');
+    expect(within(box).getByText('Last invoice, month 120')).toBeInTheDocument();
 
     await user.click(within(box).getByRole('button', { name: /^Use 400/ }));
     expect(within(box).getByText(/In use/)).toHaveTextContent('720 €');
-    expect(
-      within(box).getByRole('img', { name: /Lowest payment each month\. Month 1: 28,26/ }),
-    ).toBeInTheDocument();
+    expect(within(box).getByText('First invoice, month 1').parentElement).toHaveTextContent('28,26 €');
 
     // The real balance card does not change.
     expect(screen.getByLabelText('Your credit limit')).toHaveTextContent('1 180 €');
+
+    // The slider goes from 3 to 120 months, and the invoices follow it.
+    const pace = within(box).getByRole('slider');
+    expect(pace).toHaveAttribute('max', '120');
+    fireEvent.change(pace, { target: { value: '12' } });
+    expect(within(box).getByText('Last invoice, month 12')).toBeInTheDocument();
+    expect(within(box).getByText('Middle invoice, month 6')).toBeInTheDocument();
 
     for (let i = 0; i < 4; i++) await user.click(within(box).getByRole('button', { name: /^Pay back 200/ }));
     expect(within(box).getByText(/Nothing is in use/)).toBeInTheDocument();
