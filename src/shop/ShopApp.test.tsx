@@ -37,7 +37,7 @@ describe('shop prototype', () => {
     const user = userEvent.setup();
     render(<ShopApp />);
     await user.type(await screen.findByRole('searchbox'), 'samsung');
-    expect(screen.getByRole('status')).toHaveTextContent('1 product for “samsung”');
+    expect(screen.getByText('1 product for “samsung”')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /iPhone 17 256GB/ })).not.toBeInTheDocument();
   });
 
@@ -74,10 +74,27 @@ describe('shop prototype', () => {
     await user.click(screen.getByRole('button', { name: /Back to search/ }));
     expect(screen.queryByText(/Price went down/)).not.toBeInTheDocument();
 
-    await user.click(screen.getByText(/About this prototype/));
+    await user.click(screen.getByText(/About this concept/));
     const simulate = screen.getByRole('group', { name: /Simulate a lower price/ });
     await user.click(within(simulate).getByRole('button', { name: /iPhone 17 256GB/ }));
     expect(screen.getByText(/Price went down/)).toBeInTheDocument();
+  });
+
+  it('sits inside the app frame, with a dashboard that leads to the shop', async () => {
+    const user = userEvent.setup();
+    render(<ShopApp />);
+    const nav = screen.getByRole('navigation', { name: 'Main' });
+    expect(within(nav).getByRole('button', { name: /Shop/ })).toHaveAttribute('aria-current', 'page');
+
+    await user.click(within(nav).getByRole('button', { name: 'Dashboard' }));
+    expect(await screen.findByRole('button', { name: 'Make a withdrawal' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Fits your limit today' })).toBeInTheDocument();
+
+    await user.click(within(nav).getByRole('button', { name: 'Invoices' }));
+    expect(screen.getByText(/"Invoices" is not part of this concept/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Shop with your limit' }));
+    expect(screen.getByRole('searchbox')).toBeInTheDocument();
   });
 
   it('says so when the product data does not load, and lets the person retry', async () => {

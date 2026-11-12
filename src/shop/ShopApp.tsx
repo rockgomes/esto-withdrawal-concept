@@ -75,27 +75,39 @@ type Load =
   | { status: 'error'; message: string }
   | { status: 'ready'; catalog: Catalog; history: PriceHistory };
 
-function useHashRoute(): [string | null, (id: string | null) => void] {
-  const read = () => {
-    const match = window.location.hash.match(/^#\/p\/(.+)$/);
-    return match ? decodeURIComponent(match[1]) : null;
-  };
-  const [id, setId] = useState<string | null>(read);
+type Page = 'dashboard' | 'shop';
+
+interface Route {
+  page: Page;
+  productId: string | null;
+}
+
+function readRoute(): Route {
+  const hash = window.location.hash;
+  const product = hash.match(/^#\/p\/(.+)$/);
+  if (product) return { page: 'shop', productId: decodeURIComponent(product[1]) };
+  return { page: hash === '#/dashboard' ? 'dashboard' : 'shop', productId: null };
+}
+
+function useRoute(): [Route, (hash: string) => void] {
+  const [route, setRoute] = useState<Route>(readRoute);
   useEffect(() => {
-    const onChange = () => setId(read());
+    const onChange = () => setRoute(readRoute());
     window.addEventListener('hashchange', onChange);
     return () => window.removeEventListener('hashchange', onChange);
   }, []);
-  const go = (next: string | null) => {
-    window.location.hash = next ? `#/p/${encodeURIComponent(next)}` : '#/';
+  const navigate = (hash: string) => {
+    window.location.hash = hash;
     window.scrollTo({ top: 0 });
   };
-  return [id, go];
+  return [route, navigate];
 }
 
 export default function ShopApp() {
   const [load, setLoad] = useState<Load>({ status: 'loading' });
   const [attempt, setAttempt] = useState(0);
+  const [route, navigate] = useRoute();
+  const [notice, setNotice] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -111,44 +123,144 @@ export default function ShopApp() {
     };
   }, [attempt]);
 
+  useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(''), 3500);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
+
+  const notBuilt = (name: string) =>
+    setNotice(`"${name}" is not part of this concept. Shop and Dashboard are.`);
+
   return (
-    <div className="shop">
-      <header className="topbar">
-        <a className="brand" href="#/">
-          <span className="brand-mark" aria-hidden="true" />
-          Shop with your limit
-        </a>
-        <span className="concept-tag">Unofficial concept for ESTO</span>
-      </header>
-      {load.status === 'loading' && (
-        <main className="page" aria-busy="true">
-          <p className="status" role="status">
-            Loading the store feeds…
-          </p>
-          <div className="grid" aria-hidden="true">
-            {Array.from({ length: 8 }, (_, i) => (
-              <div className="card skeleton" key={i} />
-            ))}
-          </div>
-        </main>
-      )}
-      {load.status === 'error' && (
-        <main className="page">
-          <div className="panel" role="alert">
-            <h1>The product data did not load</h1>
-            <p className="muted">{load.message}</p>
-            <button className="btn" onClick={() => setAttempt((n) => n + 1)}>
-              Try again
-            </button>
-          </div>
-        </main>
-      )}
-      {load.status === 'ready' && <Shop catalog={load.catalog} history={load.history} />}
+    <div className="app">
+      <Sidebar page={route.page} onNavigate={navigate} onOther={notBuilt} />
+      <div className="app-main">
+        {load.status === 'loading' && (
+          <main className="page" aria-busy="true">
+            <p className="status" role="status">
+              Loading the store feeds…
+            </p>
+            <div className="grid" aria-hidden="true">
+              {Array.from({ length: 8 }, (_, i) => (
+                <div className="card skeleton" key={i} />
+              ))}
+            </div>
+          </main>
+        )}
+        {load.status === 'error' && (
+          <main className="page">
+            <div className="panel" role="alert">
+              <h1>The product data did not load</h1>
+              <p className="muted">{load.message}</p>
+              <button className="btn" onClick={() => setAttempt((n) => n + 1)}>
+                Try again
+              </button>
+            </div>
+          </main>
+        )}
+        {load.status === 'ready' && (
+          <Shop
+            catalog={load.catalog}
+            history={load.history}
+            route={route}
+            navigate={navigate}
+            onOther={notBuilt}
+          />
+        )}
+        <p className="legal">
+          Concept by Rock Gomes for the ESTO Product Builder test. Not made by ESTO AS. Product data belongs
+          to each store.
+        </p>
+      </div>
+      <p className={`notice${notice ? ' is-on' : ''}`} role="status">
+        {notice}
+      </p>
     </div>
   );
 }
 
-function Shop({ catalog: realCatalog, history }: { catalog: Catalog; history: PriceHistory }) {
+const NAV: { label: string; icon: IconName; page?: Page; badge?: string; gapBefore?: boolean }[] = [
+  { label: 'Dashboard', icon: 'grid', page: 'dashboard' },
+  { label: 'Shop', icon: 'bag', page: 'shop', badge: 'NEW' },
+  { label: 'Credit line', icon: 'card' },
+  { label: 'Invoices', icon: 'doc' },
+  { label: 'Transactions', icon: 'swap' },
+  { label: 'Agreements', icon: 'file' },
+  { label: 'Insurance', icon: 'shield', gapBefore: true },
+  { label: 'Premium', icon: 'gem' },
+  { label: 'Customer support', icon: 'chat', gapBefore: true },
+  { label: 'Profile', icon: 'user' },
+];
+
+function Sidebar({
+  page,
+  onNavigate,
+  onOther,
+}: {
+  page: Page;
+  onNavigate: (hash: string) => void;
+  onOther: (name: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const pick = (item: (typeof NAV)[number]) => {
+    setOpen(false);
+    if (item.page) onNavigate(item.page === 'dashboard' ? '#/dashboard' : '#/');
+    else onOther(item.label);
+  };
+  return (
+    <header className={`side${open ? ' is-open' : ''}`}>
+      <div className="side-top">
+        <a className="wordmark" href="#/dashboard" aria-label="esto, dashboard">
+          esto
+        </a>
+        <button
+          className="burger"
+          aria-expanded={open}
+          aria-controls="side-nav"
+          aria-label={open ? 'Close menu' : 'Open menu'}
+          onClick={() => setOpen((o) => !o)}
+        >
+          <span />
+          <span />
+          <span />
+        </button>
+      </div>
+      <nav id="side-nav" aria-label="Main">
+        <ul>
+          {NAV.map((item) => (
+            <li key={item.label} className={item.gapBefore ? 'gap' : undefined}>
+              <button
+                className="nav-item"
+                aria-current={item.page === page ? 'page' : undefined}
+                onClick={() => pick(item)}
+              >
+                <Icon name={item.icon} />
+                {item.label}
+                {item.badge && <span className="nav-badge">{item.badge}</span>}
+              </button>
+            </li>
+          ))}
+        </ul>
+        <p className="side-note">Unofficial concept. Not an ESTO product.</p>
+      </nav>
+    </header>
+  );
+}
+
+function Shop({
+  catalog: realCatalog,
+  history,
+  route,
+  navigate,
+  onOther,
+}: {
+  catalog: Catalog;
+  history: PriceHistory;
+  route: Route;
+  navigate: (hash: string) => void;
+  onOther: (name: string) => void;
+}) {
   const [account, setAccount] = useState<Account>(DEMO_ACCOUNT);
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState<Filters>(NO_FILTERS);
@@ -158,7 +270,8 @@ function Shop({ catalog: realCatalog, history }: { catalog: Catalog; history: Pr
   const [watches, setWatches] = useState<Watch[]>(readWatches);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [simulated, setSimulated] = useState<string | null>(null);
-  const [productId, go] = useHashRoute();
+  const { productId, page } = route;
+  const go = (id: string | null) => navigate(id ? `#/p/${encodeURIComponent(id)}` : '#/');
 
   const catalog = useMemo(
     () => (simulated ? withSimulatedDrop(realCatalog, simulated, 8) : realCatalog),
@@ -190,7 +303,18 @@ function Shop({ catalog: realCatalog, history }: { catalog: Catalog; history: Pr
   return (
     <>
       <main className="page">
-        <LimitSummary account={account} />
+        {page === 'dashboard' ? (
+          <Dashboard
+            account={account}
+            catalog={catalog}
+            drops={drops}
+            onShop={() => go(null)}
+            onOpen={go}
+            onOther={onOther}
+          />
+        ) : (
+          <Balance account={account} compact />
+        )}
         {productId && !product && (
           <div className="panel">
             <h1>This product is not in today's feeds</h1>
@@ -212,7 +336,7 @@ function Shop({ catalog: realCatalog, history }: { catalog: Catalog; history: Pr
             onBought={onBought}
           />
         )}
-        {!productId && (
+        {!productId && page === 'shop' && (
           <>
             <DropList drops={drops} account={account} onOpen={go} />
             <section className="panel search-panel" aria-labelledby="search-title">
@@ -305,33 +429,105 @@ function Shop({ catalog: realCatalog, history }: { catalog: Catalog; history: Pr
   );
 }
 
-/** The customer's limit: one clear number, then a bar with a legend. */
-function LimitSummary({ account }: { account: Account }) {
+/**
+ * The balance card, as on the ESTO dashboard: the free amount, a bar, the
+ * used limit on the left, and the total limit on the right.
+ */
+function Balance({
+  account,
+  compact,
+  children,
+}: {
+  account: Account;
+  compact?: boolean;
+  children?: ReactNode;
+}) {
   const free = freeLimit(account);
   return (
-    <section className="limit" aria-label="Your credit limit">
-      <div className="limit-head">
+    <section className={`balance${compact ? ' is-compact' : ''}`} aria-label="Your credit limit">
+      <div className="balance-top">
         <p>
-          <span className="limit-label">You can spend</span>
-          <strong className="limit-value">{whole(free)}</strong>
+          <span className="balance-label">Balance</span>
+          <strong className="balance-value">{whole(free)}</strong>
         </p>
-        <p className="muted small">
-          Example customer. Limit {whole(account.limit)}, {account.rate.toLocaleString('et-EE')}% interest.
-        </p>
+        <span className="tag">Credit line</span>
       </div>
       <div className="bar" aria-hidden="true">
-        <i className="seg-used" style={{ flexGrow: account.used }} />
         <i className="seg-free" style={{ flexGrow: free }} />
+        <i className="seg-used" style={{ flexGrow: account.used }} />
       </div>
-      <ul className="legend">
-        <li>
-          <i className="dot seg-used" /> In use {whole(account.used)}
-        </li>
-        <li>
-          <i className="dot seg-free" /> Free {whole(free)}
-        </li>
-      </ul>
+      <dl className="balance-ends">
+        <div>
+          <dt>Used limit</dt>
+          <dd>{whole(account.used)}</dd>
+        </div>
+        <div>
+          <dt>Total limit</dt>
+          <dd>{whole(account.limit)}</dd>
+        </div>
+      </dl>
+      {children && <div className="balance-actions">{children}</div>}
     </section>
+  );
+}
+
+function Dashboard({
+  account,
+  catalog,
+  drops,
+  onShop,
+  onOpen,
+  onOther,
+}: {
+  account: Account;
+  catalog: Catalog;
+  drops: PriceDrop[];
+  onShop: () => void;
+  onOpen: (id: string) => void;
+  onOther: (name: string) => void;
+}) {
+  const picks = useMemo(
+    () =>
+      search(catalog.products, '', { compare: true, inStock: true, maxPrice: freeLimit(account) }).slice(
+        0,
+        4,
+      ),
+    [catalog, account],
+  );
+  return (
+    <>
+      <Balance account={account}>
+        <button className="btn green" onClick={() => onOther('Higher limit')}>
+          Higher limit available
+        </button>
+        <button className="btn" onClick={() => onOther('Withdrawal')}>
+          Make a withdrawal
+        </button>
+        <button className="btn outline" onClick={onShop}>
+          Shop with your limit
+        </button>
+      </Balance>
+      <DropList drops={drops} account={account} onOpen={onOpen} />
+      <section className="panel" aria-labelledby="picks-title">
+        <div className="panel-head">
+          <h2 id="picks-title">Fits your limit today</h2>
+          <button className="link" onClick={onShop}>
+            See all products
+          </button>
+        </div>
+        <div className="grid">
+          {picks.map((p) => (
+            <ProductCard
+              key={p.id}
+              product={p}
+              account={account}
+              watched={false}
+              onOpen={() => onOpen(p.id)}
+            />
+          ))}
+        </div>
+      </section>
+    </>
   );
 }
 
@@ -871,7 +1067,7 @@ function About({
   const watchedProducts = watches.map((w) => catalog.byId.get(w.id)).filter((p): p is Product => Boolean(p));
   return (
     <details className="panel about">
-      <summary>About this prototype: what is real, and the demo controls</summary>
+      <summary>About this concept: what is real, and the demo controls</summary>
       <div className="about-grid">
         <div>
           <h3>Real</h3>
@@ -962,6 +1158,31 @@ function About({
         </div>
       </div>
     </details>
+  );
+}
+
+type IconName = 'grid' | 'bag' | 'card' | 'doc' | 'swap' | 'file' | 'shield' | 'gem' | 'chat' | 'user';
+
+const ICON_PATHS: Record<IconName, string[]> = {
+  grid: ['M4 4h6v6H4z', 'M14 4h6v6h-6z', 'M4 14h6v6H4z', 'M14 14h6v6h-6z'],
+  bag: ['M5 8h14l-1 12H6z', 'M9 8V6a3 3 0 0 1 6 0v2'],
+  card: ['M3 7h18v11H3z', 'M3 11h18', 'M7 15h3'],
+  doc: ['M6 3h12v18H6z', 'M9 8h6', 'M9 12h6', 'M9 16h3'],
+  swap: ['M4 8h14', 'm15 5 3 3-3 3', 'M20 16H6', 'm9 13-3 3 3 3'],
+  file: ['M7 3h7l4 4v14H7z', 'M14 3v4h4', 'm10 14 2 2 3-4'],
+  shield: ['M12 3 5 6v6c0 4 3 7 7 9 4-2 7-5 7-9V6z'],
+  gem: ['M6 4h12l3 5-9 11L3 9z', 'M3 9h18'],
+  chat: ['M4 5h16v11H9l-5 4z'],
+  user: ['M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8', 'M5 20a7 7 0 0 1 14 0'],
+};
+
+function Icon({ name }: { name: IconName }) {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" className="icon">
+      {ICON_PATHS[name].map((d) => (
+        <path key={d} d={d} />
+      ))}
+    </svg>
   );
 }
 

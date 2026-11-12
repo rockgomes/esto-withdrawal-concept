@@ -1,52 +1,54 @@
-/* Shop prototype. A calm product surface: the store data is the content,
-   and the limit meter is the one moving part. */
+/* A new "Shop" section inside the ESTO customer app. The frame follows the
+   real app: grey page, flat white cards, a white side menu, black and green
+   pill buttons. Colours are sampled from the app, not taken from a file. */
 
 :root {
-  --bg: #f3f4f1;
+  --bg: #f3f3f1;
   --card: #ffffff;
-  --card-2: #f7f8f5;
-  --ink: #14171a;
-  --muted: #5b6168;
-  --line: #dfe2dc;
-  --seg-used: #b9beb6;
-  --green: #15803d;
-  --green-soft: #dcfce7;
-  --green-ink: #14532d;
+  --card-2: #f5f5f3;
+  --ink: #0a0a0a;
+  --muted: #6b6f76;
+  --line: #e7e7e4;
+  --seg-used: #d9dad6;
+  --green: #54b274;
+  --green-strong: #1f7a43;
+  --green-soft: #e3f4e9;
+  --green-ink: #175c33;
   --amber: #b45309;
-  --amber-soft: #fef3c7;
-  --red-soft: #fee2e2;
-  --red-ink: #991b1b;
-  --blue-soft: #dbeafe;
+  --amber-soft: #fdf3d7;
+  --red-soft: #fde8e8;
+  --red-ink: #9b1c1c;
+  --blue-soft: #e3ecfb;
   --blue-ink: #1e3a8a;
   --focus: #2563eb;
   --on-ink: #ffffff;
   --tile: #ffffff;
-  --shadow: 0 1px 2px rgb(20 23 26 / 0.06), 0 8px 24px -16px rgb(20 23 26 / 0.25);
+  --radius: 12px;
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #101211;
-    --card: #1a1d1b;
-    --card-2: #222623;
-    --ink: #eef0ec;
-    --muted: #a3a9a2;
-    --line: #2f3531;
-    --seg-used: #5a615b;
-    --green: #4ade80;
-    --green-soft: #12351f;
-    --green-ink: #bbf7d0;
+    --bg: #111211;
+    --card: #1b1c1b;
+    --card-2: #242624;
+    --ink: #f1f1ee;
+    --muted: #a4a8a3;
+    --line: #2e302e;
+    --seg-used: #3c3f3c;
+    --green: #54b274;
+    --green-strong: #6cc98b;
+    --green-soft: #173323;
+    --green-ink: #bfe8cd;
     --amber: #fbbf24;
     --amber-soft: #3a2a08;
     --red-soft: #3f1515;
     --red-ink: #fecaca;
-    --blue-soft: #172554;
-    --blue-ink: #bfdbfe;
+    --blue-soft: #1b2a4d;
+    --blue-ink: #c7d8fb;
     --focus: #93c5fd;
-    --on-ink: #101211;
-    --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -16px rgb(0 0 0 / 0.8);
+    --on-ink: #111211;
     color-scheme: dark;
   }
 }
@@ -66,12 +68,12 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-family:
-    'Geist',
+    'Inter',
     system-ui,
     -apple-system,
     'Segoe UI',
     sans-serif;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.45;
 }
 
@@ -163,114 +165,237 @@ a {
   flex: none;
 }
 
-/* ─── Frame ─────────────────────────────────────────────────────────── */
+/* ─── App frame ─────────────────────────────────────────────────────── */
 
-.topbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4px 16px;
-  max-width: 1180px;
+.app {
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  gap: 20px;
+  max-width: 1320px;
   margin: 0 auto;
-  padding: 14px 16px 10px;
+  padding: 20px;
+  align-items: start;
 }
 
-.brand {
-  display: inline-flex;
+.side {
+  position: sticky;
+  top: 20px;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 40px);
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 24px 12px 16px;
+}
+
+.side-top {
+  display: flex;
   align-items: center;
-  gap: 8px;
-  font-weight: 700;
-  font-size: 17px;
-  letter-spacing: -0.01em;
+  justify-content: space-between;
+  padding: 0 12px 28px;
+}
+
+.wordmark {
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  line-height: 1;
   text-decoration: none;
 }
 
-.brand-mark {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  border: 4px solid var(--green);
+.burger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 44px;
+  height: 44px;
+  padding: 0 8px;
+  border: 0;
+  background: none;
 }
 
-.concept-tag {
-  font-family: 'Geist Mono', ui-monospace, monospace;
+.burger span {
+  height: 3px;
+  background: var(--ink);
+  border-radius: 1px;
+}
+
+.side nav {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.side li.gap {
+  margin-top: 18px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  font-weight: 500;
+  text-align: left;
+}
+
+.nav-item:hover {
+  background: var(--card-2);
+}
+
+.nav-item[aria-current='page'] {
+  background: var(--bg);
+}
+
+.nav-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: var(--green-soft);
+  color: var(--green-ink);
+}
+
+.side-note {
+  margin-top: auto;
+  padding: 24px 12px 0;
   font-size: 12px;
   color: var(--muted);
 }
 
+.app-main {
+  min-width: 0;
+}
+
 .page {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 16px 16px 64px;
+  min-width: 0;
 }
 
 .panel {
   background: var(--card);
-  border-radius: 18px;
+  border-radius: var(--radius);
   padding: 20px;
   margin-bottom: 16px;
-  box-shadow: var(--shadow);
+}
+
+.panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.panel-head h2 {
+  margin: 0;
+}
+
+.link {
+  white-space: nowrap;
+  border: 0;
+  background: none;
+  padding: 4px 0;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .status {
   margin: 4px 4px 12px;
   color: var(--muted);
-  font-size: 14px;
-  min-height: 21px;
+  min-height: 20px;
 }
 
-/* ─── Limit ─────────────────────────────────────────────────────────── */
-
-.limit {
-  background: var(--card);
-  border-radius: 18px;
-  padding: 16px 20px;
-  margin-bottom: 16px;
-  box-shadow: var(--shadow);
-}
-
-.limit-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 4px 16px;
-  margin-bottom: 12px;
-}
-
-.limit-label {
-  display: block;
-  font-size: 13px;
+.legal {
+  margin: 32px 4px 8px;
+  font-size: 12px;
   color: var(--muted);
 }
 
-.limit-value {
-  font-size: 30px;
-  line-height: 1.1;
+.notice {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  z-index: 20;
+  translate: -50% 16px;
+  max-width: calc(100vw - 32px);
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: var(--ink);
+  color: var(--on-ink);
+  font-size: 13px;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.2s,
+    translate 0.3s var(--ease);
+}
+
+.notice.is-on {
+  opacity: 1;
+  translate: -50% 0;
+}
+
+/* ─── Balance card ──────────────────────────────────────────────────── */
+
+.balance {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.balance-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.balance-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.balance-value {
+  font-size: 34px;
+  line-height: 1.15;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
 }
 
+.balance.is-compact .balance-value {
+  font-size: 26px;
+}
+
+.tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--muted);
+}
+
 .bar {
   display: flex;
-  gap: 3px;
-  height: 12px;
+  gap: 2px;
+  height: 5px;
+  margin: 14px 0 10px;
 }
 
 .bar i {
   flex-basis: 0;
   min-width: 0;
-  border-radius: 4px;
+  border-radius: 3px;
   transition: flex-grow 0.45s var(--ease);
-}
-
-.bar i:first-child {
-  border-radius: 8px 4px 4px 8px;
-}
-
-.bar i:last-child {
-  border-radius: 4px 8px 8px 4px;
 }
 
 .seg-used {
@@ -285,12 +410,41 @@ a {
   background: var(--green);
 }
 
+.balance-ends {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 12px;
+}
+
+.balance-ends div:last-child {
+  text-align: right;
+}
+
+.balance-ends dt {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.balance-ends dd {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.balance-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 18px -20px 0;
+  padding: 16px 20px 0;
+  border-top: 1px solid var(--line);
+}
+
 .legend {
   display: flex;
   flex-wrap: wrap;
   gap: 4px 16px;
-  margin-top: 8px;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
@@ -302,8 +456,8 @@ a {
 }
 
 .dot {
-  width: 10px;
-  height: 10px;
+  width: 9px;
+  height: 9px;
   border-radius: 3px;
   flex: none;
 }
@@ -311,18 +465,17 @@ a {
 .impact {
   margin-top: 16px;
   padding: 12px 14px;
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--card-2);
 }
 
-.impact-title {
-  margin-bottom: 10px;
+.impact .bar {
+  height: 8px;
 }
 
 .impact-over {
   background: var(--red-soft);
   color: var(--red-ink);
-  font-size: 14px;
 }
 
 /* ─── Search ────────────────────────────────────────────────────────── */
@@ -448,7 +601,7 @@ a {
 .card {
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: var(--radius);
   overflow: hidden;
 }
 
@@ -606,9 +759,18 @@ a {
 .btn.buy {
   width: 100%;
   margin-top: 16px;
-  padding: 14px 20px;
+  padding: 13px 20px;
+}
+
+.btn.green {
   background: var(--green);
-  color: var(--on-ink);
+  color: #ffffff;
+}
+
+.btn.outline {
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1.5px var(--ink);
 }
 
 .btn.ghost[aria-pressed='true'] {
@@ -691,7 +853,7 @@ a {
 input[type='range'] {
   width: 100%;
   margin: 10px 0 4px;
-  accent-color: var(--green);
+  accent-color: var(--green-strong);
 }
 
 .calc {
@@ -1013,10 +1175,56 @@ input[type='range'] {
   }
 }
 
-@media (max-width: 800px) {
+@media (max-width: 1040px) {
   .detail-grid,
   .about-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 800px) {
+  .app {
+    display: block;
+    padding: 0 0 24px;
+  }
+
+  .side {
+    position: sticky;
+    top: 0;
+    z-index: 6;
+    min-height: 0;
+    border-radius: 0;
+    padding: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .side-top {
+    padding: 10px 12px 10px 20px;
+  }
+
+  .burger {
+    display: flex;
+  }
+
+  .side nav {
+    display: none;
+    padding: 4px 12px 16px;
+  }
+
+  .side.is-open nav {
+    display: flex;
+  }
+
+  .side-note {
+    padding-top: 12px;
+  }
+
+  .app-main {
+    padding: 16px 12px 0;
+  }
+
+  .balance-actions .btn {
+    flex: 1 1 100%;
   }
 
   .sort {
