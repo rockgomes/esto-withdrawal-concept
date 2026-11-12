@@ -21,7 +21,7 @@ export function HowCard({ phase, onShop }: { phase: Phase; onShop: () => void })
                 <span className="is-on">ESTO</span>
               </span>
               <span className="tile-title">
-                Pay at a store <span className="new-tag">NEW</span>
+                Pay at a store <span className="nav-badge">NEW</span>
               </span>
               <span className="tile-text">Choose ESTO at the checkout and pay from your limit.</span>
               <span className="tile-go">Find products</span>
@@ -32,7 +32,7 @@ export function HowCard({ phase, onShop }: { phase: Phase; onShop: () => void })
                 <span>Search a product</span>
               </span>
               <span className="tile-title">
-                See what your limit can buy <span className="new-tag">NEW</span>
+                See what your limit can buy <span className="nav-badge">NEW</span>
               </span>
               <span className="tile-text">Search real prices from ESTO partner stores.</span>
               <span className="tile-go">Find products</span>
