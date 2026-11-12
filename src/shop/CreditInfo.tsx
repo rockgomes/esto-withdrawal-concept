@@ -1,10 +1,12 @@
+import type { Phase } from './phase';
+
 /**
  * "How it works" on the Credit Line page. The four tiles follow the real
  * ESTO page: a small picture, a short title, and one or two sentences. The
  * titles and texts of those four are ESTO's own. The fifth tile is new in
- * this concept.
+ * this concept. It shows only in Phase 2, where paying at a store exists.
  */
-export default function CreditInfo({ onShop }: { onShop: () => void }) {
+export default function CreditInfo({ onShop, phase }: { onShop: () => void; phase: Phase }) {
   return (
     <section aria-labelledby="info-title">
       <h2 id="info-title" className="page-title">
@@ -57,23 +59,25 @@ export default function CreditInfo({ onShop }: { onShop: () => void }) {
           <p>Monthly repayments replenish your withdrawable credit amount</p>
         </article>
 
-        <article className="tile is-new">
-          <div className="tile-pic pic-store" aria-hidden="true">
-            <span>Hire purchase</span>
-            <span className="is-on">Credit line</span>
-            <span>ESTO 3</span>
-          </div>
-          <h3>
-            Pay at a store from your limit <span className="nav-badge">NEW</span>
-          </h3>
-          <p>
-            At a store checkout, choose ESTO and pay from your credit line. There is no application and no new
-            contract.
-          </p>
-          <button className="link" onClick={onShop}>
-            Find a product
-          </button>
-        </article>
+        {phase === 2 && (
+          <article className="tile is-new">
+            <div className="tile-pic pic-store" aria-hidden="true">
+              <span>Hire purchase</span>
+              <span className="is-on">Credit line</span>
+              <span>ESTO 3</span>
+            </div>
+            <h3>
+              Pay at a store from your limit <span className="nav-badge">NEW</span>
+            </h3>
+            <p>
+              At a store checkout, choose ESTO and pay from your credit line. There is no application and no
+              new contract.
+            </p>
+            <button className="link" onClick={onShop}>
+              Find a product
+            </button>
+          </article>
+        )}
       </div>
     </section>
   );

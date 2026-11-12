@@ -394,12 +394,13 @@ function Shop({
             onTransactions={() => navigate('#/transactions')}
           />
         ) : page === 'transactions' ? (
-          <Transactions purchases={purchases} />
+          <Transactions purchases={purchases} phase={phase} />
         ) : page === 'credit' ? (
           <CreditLine
             account={account}
             purchases={purchases}
             tab={creditTab}
+            phase={phase}
             onTab={(tab) => navigate(tab === 'info' ? '#/credit-line?tab=information' : '#/credit-line')}
             onOther={onOther}
             onShop={() => go(null)}
@@ -1071,7 +1072,7 @@ function shortDate(iso: string): string {
  * The Transactions page, with the columns of the real one. A store purchase
  * from the credit line is a new type of row: ESTO pays the store.
  */
-function Transactions({ purchases }: { purchases: Purchase[] }) {
+function Transactions({ purchases, phase }: { purchases: Purchase[]; phase: Phase }) {
   return (
     <section aria-labelledby="tx-title">
       <h1 id="tx-title" className="page-title">
@@ -1110,8 +1111,9 @@ function Transactions({ purchases }: { purchases: Purchase[] }) {
             {purchases.length === 0 && (
               <tr>
                 <td colSpan={6} className="muted">
-                  No purchase yet. When you pay at a store from your credit line, it shows here as a row of
-                  the type "Purchase".
+                  {phase === 2
+                    ? 'No purchase yet. When you pay at a store from your credit line, it shows here as a row of the type "Purchase".'
+                    : 'Nothing to show in this prototype. Paying at a store from the credit line comes in Phase 2.'}
                 </td>
               </tr>
             )}
@@ -1137,6 +1139,7 @@ function CreditLine({
   onTab,
   onOther,
   onShop,
+  phase,
 }: {
   account: Account;
   purchases: Purchase[];
@@ -1144,6 +1147,7 @@ function CreditLine({
   onTab: (tab: 'mine' | 'info') => void;
   onOther: (name: string) => void;
   onShop: () => void;
+  phase: Phase;
 }) {
   return (
     <>
@@ -1164,7 +1168,7 @@ function CreditLine({
         </button>
       </div>
       {tab === 'info' ? (
-        <CreditInfo onShop={onShop} />
+        <CreditInfo onShop={onShop} phase={phase} />
       ) : (
         <>
           <section aria-labelledby="details-title">
@@ -1186,20 +1190,22 @@ function CreditLine({
               </div>
             </dl>
           </section>
-          <section aria-labelledby="bought-title">
-            <h2 id="bought-title" className="page-title">
-              Purchases from your credit line <span className="nav-badge">NEW</span>
-            </h2>
-            <div className="panel">
-              {purchases.length === 0 ? (
-                <p className="muted">
-                  No purchase yet. A store purchase that you pay from the credit line shows here.
-                </p>
-              ) : (
-                <PurchaseRows purchases={purchases} />
-              )}
-            </div>
-          </section>
+          {phase === 2 && (
+            <section aria-labelledby="bought-title">
+              <h2 id="bought-title" className="page-title">
+                Purchases from your credit line <span className="nav-badge">NEW</span>
+              </h2>
+              <div className="panel">
+                {purchases.length === 0 ? (
+                  <p className="muted">
+                    No purchase yet. A store purchase that you pay from the credit line shows here.
+                  </p>
+                ) : (
+                  <PurchaseRows purchases={purchases} />
+                )}
+              </div>
+            </section>
+          )}
         </>
       )}
     </>

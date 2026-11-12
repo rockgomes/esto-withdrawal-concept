@@ -162,6 +162,15 @@ describe('shop prototype', () => {
       'https://onoff.ee/iphone-17',
     );
     expect(screen.queryByRole('button', { name: /with your credit line/ })).not.toBeInTheDocument();
+    // Phase 2 parts do not show in Phase 1.
+    const nav = screen.getByRole('navigation', { name: 'Main' });
+    await user.click(within(nav).getByRole('button', { name: 'Credit Line' }));
+    expect(screen.queryByText(/Purchases from your credit line/)).not.toBeInTheDocument();
+    await user.click(screen.getByRole('tab', { name: 'Information' }));
+    expect(screen.getByRole('heading', { name: 'Payments replenish balance' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /Pay at a store from your limit/ })).not.toBeInTheDocument();
+    await user.click(within(nav).getByRole('button', { name: /Find products/ }));
+    await user.click(screen.getByRole('button', { name: /Apple iPhone 17 256GB/ }));
     // One link to the store, not two.
     expect(
       screen.getAllByRole('link').filter((a) => a.getAttribute('href') === 'https://onoff.ee/iphone-17'),
