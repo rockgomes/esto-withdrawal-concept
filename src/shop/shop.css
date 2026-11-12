@@ -1872,7 +1872,7 @@ h2.page-title {
 
 /* ESTO's payment page. */
 .ep {
-  max-width: 440px;
+  max-width: 580px;
   margin: 0 auto;
   padding: 28px 16px 56px;
 }
@@ -1942,6 +1942,14 @@ h2.page-title {
   color: var(--green-ink);
   font-size: 13px;
   font-weight: 500;
+}
+
+.pay-how {
+  margin: 10px 0 0;
+}
+
+.pay-lead {
+  margin: 0 0 16px;
 }
 
 .steps-note {

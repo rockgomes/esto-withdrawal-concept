@@ -16,8 +16,10 @@ import {
   LIMIT_CHOICES,
   MAX_MONTHS,
   MIN_MONTHS,
+  MINIMUM_MONTHS,
   fits,
   freeLimit,
+  minimumPathInterest,
   minimumPayment,
   plan,
   type Account,
@@ -699,7 +701,7 @@ function ProductCard({
         <span className="product-name">{product.name}</span>
         <span className="monthly">
           {money(plan(price, account).monthly)}
-          <small> / month for you</small>
+          <small> / month over 12 months</small>
         </span>
         <span className="muted small">
           {money(price)} at {product.offers[0].store.name}
@@ -813,10 +815,14 @@ function ProductView({
           </section>
 
           <section className="panel" aria-labelledby="plan-title">
-            <h2 id="plan-title">Your payment plan</h2>
+            <h2 id="plan-title">Paying it back</h2>
+            <p className="pay-lead">
+              A credit line has one invoice a month. For this purchase the lowest payment starts at{' '}
+              <strong>{money(minimumPayment(offer.price, account.rate))}</strong> and goes down each month.
+            </p>
             <label className="slider">
               <span>
-                Pay it off in <strong>{months} months</strong>
+                Or pay more and finish in <strong>{months} months</strong>
               </span>
               <input
                 type="range"
@@ -842,8 +848,9 @@ function ProductView({
               </div>
             </dl>
             <p className="muted small">
-              The lowest payment your credit line allows for this amount is{' '}
-              {money(minimumPayment(offer.price, account.rate))} a month. A fixed plan costs less interest.
+              The slider is a calculator, not a contract. You can pay more in any month at no extra cost. If
+              you only pay the lowest amount, it takes {MINIMUM_MONTHS} months and costs about{' '}
+              {whole(minimumPathInterest(offer.price, account.rate))} in interest.
             </p>
             {phase === 1 ? (
               <>
@@ -899,7 +906,6 @@ function ProductView({
         <Checkout
           product={product}
           offer={offer}
-          months={months}
           account={account}
           onClose={() => setBuying(false)}
           onPaid={() => {
@@ -943,7 +949,7 @@ function DropList({
             <span className="drop-name">{d.product.name}</span>
             <span className="small">
               Now {money(d.now)} at {d.product.offers[0].store.name}, was {money(d.was)}.{' '}
-              {money(plan(d.now, account).monthly)} a month for you.{' '}
+              {money(plan(d.now, account).monthly)} a month over 12 months.{' '}
               {fits(d.now, account) ? 'It fits your limit.' : ''}
             </span>
           </span>
@@ -1013,7 +1019,7 @@ function PurchaseRows({ purchases }: { purchases: Purchase[] }) {
             <strong>{b.offer.store.name}</strong>
             <span className="tx-name">{b.product.name}</span>
             <span className="muted small">
-              {formatDateTime(b.date)}. Paid from your credit line. Your next monthly payment went up by{' '}
+              {formatDateTime(b.date)}. Paid from your credit line. Your lowest monthly payment went up by{' '}
               {money(b.raise)}.
             </span>
           </span>
@@ -1199,7 +1205,8 @@ function About({
             <li>The customer: the limit and the amount in use.</li>
             <li>
               The {account.rate.toLocaleString('et-EE')}% yearly rate. It is the highest interest rate in
-              ESTO's own credit line example (APR 44,84% on a 500 € limit). Fees are not in the math here.
+              ESTO's own credit line example (APR 44,84% on a 500 € limit). ESTO says interest starts from 19%
+              a year, so a real customer can pay less. Fees are not in the math here.
             </li>
             <li>
               Phase 2. ESTO has no credit line method at checkout today. The store checkout page is a

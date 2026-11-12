@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { formatMoney, formatWhole } from '../lib/format';
 import type { Cents } from '../lib/money';
 import type { Offer, Product } from './catalog';
-import { freeLimit, minimumPayment, plan, type Account } from './credit';
+import { freeLimit, minimumPayment, type Account } from './credit';
 import LimitImpact from './LimitImpact';
 
 const money = (cents: Cents) => formatMoney(cents, 'et');
@@ -49,7 +49,6 @@ function hostOf(url: string, fallback: string): string {
 export default function Checkout({
   product,
   offer,
-  months,
   account,
   onClose,
   onPaid,
@@ -57,7 +56,6 @@ export default function Checkout({
 }: {
   product: Product;
   offer: Offer;
-  months: number;
   account: Account;
   onClose: () => void;
   onPaid: () => void;
@@ -68,10 +66,12 @@ export default function Checkout({
   const [storePay, setStorePay] = useState<StorePay>('esto');
   // Fixed when the flow opens, so the numbers do not move after the payment.
   const [freeBefore] = useState(() => freeLimit(account));
+  const usedBefore = account.limit - freeBefore;
+  const payNow = minimumPayment(usedBefore, account.rate);
+  const payAfter = minimumPayment(usedBefore + offer.price, account.rate);
   const enough = offer.price <= freeBefore;
   const [method, setMethod] = useState<Method>(enough ? 'credit-line' : 'hire-purchase');
   const heading = useRef<HTMLHeadingElement>(null);
-  const p = plan(offer.price, account, months);
   const store = offer.store.name;
   const storeHost = hostOf(offer.store.site || offer.url, store);
   const onStore = step === 'store' || step === 'confirmed';
@@ -253,19 +253,21 @@ export default function Checkout({
             <div className="esto-card">
               <p className="esto-price">{money(offer.price)}</p>
               <p className="muted small">{product.name}</p>
-              <LimitImpact account={{ ...account, used: account.limit - freeBefore }} price={offer.price} />
+              <LimitImpact account={{ ...account, used: usedBefore }} price={offer.price} />
               <dl className="lines">
                 <div>
-                  <dt>Your next monthly payment goes up by</dt>
-                  <dd>{money(minimumPayment(offer.price, account.rate))}</dd>
+                  <dt>Lowest monthly payment now</dt>
+                  <dd>{money(payNow)}</dd>
                 </div>
                 <div>
-                  <dt>Your plan, if you pay it off in {months} months</dt>
-                  <dd>
-                    {months} × {money(p.monthly)}
-                  </dd>
+                  <dt>Lowest monthly payment after this purchase</dt>
+                  <dd>{money(payAfter)}</dd>
                 </div>
               </dl>
+              <p className="muted small pay-how">
+                You get one invoice a month. This is the lowest amount on it, and it goes down each month. You
+                can pay more in any month at no extra cost.
+              </p>
               <p className="esto-ok">
                 No application and no new contract. You signed a credit line contract before.
               </p>

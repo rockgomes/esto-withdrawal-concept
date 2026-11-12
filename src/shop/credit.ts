@@ -46,9 +46,24 @@ export function plan(price: Cents, account: Account, months: number = DEFAULT_MO
 }
 
 /**
- * The lowest monthly payment the credit line allows: 1/120 of the amount in
- * use plus one month of interest on it.
+ * The lowest monthly payment the credit line allows. ESTO's wording: the
+ * first payment is 1/120 of the loan amount plus the interest. The principal
+ * share stays the same and the interest follows the balance, so the payment
+ * goes down each month.
  */
 export function minimumPayment(amount: Cents, rate: number): Cents {
   return Math.round(amount / 120 + (amount * rate) / 100 / 12);
+}
+
+/** How many months the lowest payments take: the principal share is 1/120 each month. */
+export const MINIMUM_MONTHS = 120;
+
+/** Interest paid in total when a customer only pays the lowest amount each month. */
+export function minimumPathInterest(amount: Cents, rate: number): Cents {
+  let interest = 0;
+  for (let month = 0; month < MINIMUM_MONTHS; month++) {
+    const balance = (amount * (MINIMUM_MONTHS - month)) / MINIMUM_MONTHS;
+    interest += (balance * rate) / 100 / 12;
+  }
+  return Math.round(interest);
 }

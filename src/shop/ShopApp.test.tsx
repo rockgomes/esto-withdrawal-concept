@@ -29,7 +29,7 @@ describe('shop prototype', () => {
   it('shows real products with a personal monthly price and a limit check', async () => {
     render(<ShopApp />);
     const phone = await screen.findByRole('button', { name: /Apple iPhone 17 256GB/ });
-    expect(phone).toHaveTextContent('108,99 € / month for you');
+    expect(phone).toHaveTextContent('108,99 € / month over 12 months');
     expect(phone).toHaveTextContent('Fits your limit');
     expect(screen.getByRole('button', { name: /Samsung QLED/ })).toHaveTextContent('Above your free limit');
   });
@@ -64,7 +64,8 @@ describe('shop prototype', () => {
     expect(within(flow).getByRole('heading', { name: 'Confirm who you are' })).toBeInTheDocument();
     await user.click(within(flow).getByRole('button', { name: 'Smart-ID' }));
     expect(within(flow).getByRole('radio', { name: /Credit line/ })).toHaveAttribute('aria-checked', 'true');
-    expect(flow).toHaveTextContent('12 × 108,99 €');
+    expect(flow).toHaveTextContent('Lowest monthly payment after this purchase');
+    expect(flow).toHaveTextContent('pay more in any month at no extra cost');
     expect(flow).toHaveTextContent('No application and no new contract');
 
     // Another method goes on as today, with no push back to the credit line.
@@ -92,7 +93,7 @@ describe('shop prototype', () => {
 
     await user.click(screen.getByRole('button', { name: 'Credit Line' }));
     expect(screen.getByText('Credit used').parentElement).toHaveTextContent('1 399 €');
-    expect(screen.getByText(/Your next monthly payment went up by/)).toBeInTheDocument();
+    expect(screen.getByText(/Your lowest monthly payment went up by/)).toBeInTheDocument();
   });
 
   it('lets a customer buy above the free limit with another method', async () => {

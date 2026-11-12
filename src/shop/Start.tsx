@@ -103,7 +103,7 @@ export default function Start({
             <>
               <strong>{active.name}.</strong> {money(lowestPrice(active))} at {active.offers[0].store.name}.{' '}
               {active.offers.length} stores sell it. {money(plan(lowestPrice(active), account).monthly)} a
-              month for this customer over 12 months.{' '}
+              month if this customer pays it off in 12 months.{' '}
               {lowestPrice(active) <= free ? 'It fits the limit.' : 'It is above the free limit.'}
             </>
           ) : catalog ? (

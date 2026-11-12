@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEMO_ACCOUNT, fits, freeLimit, minimumPayment, plan } from './credit';
+import { DEMO_ACCOUNT, fits, freeLimit, minimumPathInterest, minimumPayment, plan } from './credit';
 
 describe('credit', () => {
   it('knows the free limit and what fits it', () => {
@@ -22,5 +22,11 @@ describe('credit', () => {
 
   it('computes the lowest allowed payment: 1/120 plus one month of interest', () => {
     expect(minimumPayment(120_000, 12)).toBe(1_000 + 1_200);
+  });
+
+  it('adds up the interest when only the lowest amount is paid for 120 months', () => {
+    // 1 200 EUR at 12%: the balance falls by 10 EUR a month, and the interest is 1% of it.
+    expect(minimumPathInterest(120_000, 12)).toBe(72_600);
+    expect(minimumPathInterest(120_000, 0)).toBe(0);
   });
 });
