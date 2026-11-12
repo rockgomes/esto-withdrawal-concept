@@ -180,7 +180,9 @@ describe('shop prototype', () => {
     );
     expect(screen.queryByRole('button', { name: /with your credit line/ })).not.toBeInTheDocument();
     // One link to the store, not two.
-    expect(screen.getAllByRole('link', { name: /ONOFF/ })).toHaveLength(1);
+    expect(
+      screen.getAllByRole('link').filter((a) => a.getAttribute('href') === 'https://onoff.ee/iphone-17'),
+    ).toHaveLength(1);
   });
 
   it('starts on a page that shows real products on the limit, and opens the prototype', async () => {
