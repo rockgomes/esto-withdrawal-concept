@@ -1026,7 +1026,7 @@ function Transactions({ purchases, onShop }: { purchases: Purchase[]; onShop: ()
       {purchases.length === 0 ? (
         <>
           <p className="muted">
-            No purchases from your credit line yet. A purchase shows here as soon as you pay at a store.
+            Nothing here yet. A store purchase that you pay from your credit line shows on this page.
           </p>
           <button className="btn" onClick={onShop}>
             Find a product
@@ -1036,8 +1036,8 @@ function Transactions({ purchases, onShop }: { purchases: Purchase[]; onShop: ()
         <PurchaseRows purchases={purchases} />
       )}
       <p className="muted small tx-note">
-        This page shows only purchases made in this prototype. They are simulated. The real Transactions page
-        also has withdrawals and payments.
+        Prototype: this page lists only the purchases you make in this demo. I have not seen the real
+        Transactions page, so its other content is not rebuilt here.
       </p>
     </section>
   );
