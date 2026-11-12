@@ -495,6 +495,7 @@ function Shop({
           onLimit={(limit) => setAccount((a) => ({ ...a, limit }))}
           watches={watches}
           simulated={simulated}
+          drops={drops}
           onSimulate={setSimulated}
         />
       </main>
@@ -762,8 +763,8 @@ function ProductView({
           </button>
           {watch && (
             <p className="muted small">
-              Watching since {formatDate(watch.since)}, from {money(watch.price)}. You see an alert here when
-              any store goes lower.
+              Watching since {formatDate(watch.since)}, from {money(watch.price)}. When any store goes lower,
+              ESTO sends an email to the address in your profile. The alert also shows on your dashboard.
             </p>
           )}
         </section>
@@ -1049,6 +1050,7 @@ function About({
   watches,
   simulated,
   onSimulate,
+  drops,
 }: {
   catalog: Catalog;
   account: Account;
@@ -1056,6 +1058,7 @@ function About({
   watches: Watch[];
   simulated: string | null;
   onSimulate: (id: string | null) => void;
+  drops: PriceDrop[];
 }) {
   const watchedProducts = watches.map((w) => catalog.byId.get(w.id)).filter((p): p is Product => Boolean(p));
   return (
@@ -1085,6 +1088,18 @@ function About({
             <li>
               Phase 2. ESTO has no credit line method at checkout today. The store checkout page is a
               stand-in, and no order is made.
+            </li>
+          </ul>
+          <h3>One change to the balance card</h3>
+          <ul>
+            <li>
+              In the real app the bar is one colour, and the label under its left end says "Used limit". The
+              colour means free money. So a reader can take the coloured part for the used part.
+            </li>
+            <li>
+              Here the used part is grey and sits above "Used limit". The free part is green, and "Balance"
+              has the same green dot. Each number has the colour of its part. With nothing in use, the bar
+              looks the same as the real one.
             </li>
           </ul>
           <p className="muted small">
@@ -1152,6 +1167,21 @@ function About({
               </button>
             ))}
           </fieldset>
+          {drops.map((d) => (
+            <div className="mail" key={d.product.id} role="group" aria-label="The email the customer gets">
+              <p className="mail-meta">From ESTO. To the email in the customer's profile.</p>
+              <p className="mail-subject">
+                Price went down {money(d.saved)}: {d.product.name}
+              </p>
+              <p>
+                It is now {money(d.now)} at {d.product.offers[0].store.name}. It was {money(d.was)} when you
+                started to watch it. For you that is {money(plan(d.now, account).monthly)} a month over 12
+                months. {fits(d.now, account) ? 'It fits your free limit.' : 'It is above your free limit.'}
+              </p>
+              <p className="mail-link">See the product in ESTO</p>
+              <p className="muted small">Prototype: no email is sent. This is the email the customer gets.</p>
+            </div>
+          ))}
         </div>
       </div>
     </details>

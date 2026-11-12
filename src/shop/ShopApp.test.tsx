@@ -157,7 +157,8 @@ describe('shop prototype', () => {
     await user.click(screen.getByText(/About this concept/));
     const simulate = screen.getByRole('group', { name: /Simulate a lower price/ });
     await user.click(within(simulate).getByRole('button', { name: /iPhone 17 256GB/ }));
-    expect(screen.getByText(/Price went down/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Price went down/).length).toBeGreaterThan(0);
+    expect(screen.getByLabelText('The email the customer gets')).toHaveTextContent('no email is sent');
   });
 
   it('sits inside the app frame, with a dashboard that leads to the shop', async () => {

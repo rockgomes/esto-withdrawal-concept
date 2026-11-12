@@ -1962,6 +1962,33 @@ input[type='range'] {
 
 /* ─── Motion ────────────────────────────────────────────────────────── */
 
+.mail {
+  margin-top: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card-2);
+}
+
+.mail p {
+  margin: 0 0 8px;
+}
+
+.mail-meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.mail-subject {
+  font-weight: 700;
+}
+
+.mail-link {
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 @keyframes drop {
   from {
     opacity: 0;
