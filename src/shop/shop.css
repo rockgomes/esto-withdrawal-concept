@@ -8,6 +8,7 @@
   --ink: #14171a;
   --muted: #5b6168;
   --line: #dfe2dc;
+  --seg-used: #b9beb6;
   --green: #15803d;
   --green-soft: #dcfce7;
   --green-ink: #14532d;
@@ -33,6 +34,7 @@
     --ink: #eef0ec;
     --muted: #a3a9a2;
     --line: #2f3531;
+    --seg-used: #5a615b;
     --green: #4ade80;
     --green-soft: #12351f;
     --green-ink: #bbf7d0;
@@ -218,80 +220,109 @@ a {
   min-height: 21px;
 }
 
-/* ─── Limit meter ───────────────────────────────────────────────────── */
+/* ─── Limit ─────────────────────────────────────────────────────────── */
 
-.meter {
-  position: sticky;
-  top: 0;
-  z-index: 5;
-  background: color-mix(in srgb, var(--bg) 88%, transparent);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--line);
+.limit {
+  background: var(--card);
+  border-radius: 18px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
 }
 
-.meter-inner {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 10px 16px 12px;
-}
-
-.meter-row {
+.limit-head {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: 2px 16px;
+  gap: 4px 16px;
+  margin-bottom: 12px;
 }
 
-.meter-label {
+.limit-label {
   display: block;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--muted);
 }
 
-.meter-value {
-  font-size: 24px;
+.limit-value {
+  font-size: 30px;
+  line-height: 1.1;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
 }
 
-.meter-after {
+.bar {
+  display: flex;
+  gap: 3px;
+  height: 12px;
+}
+
+.bar i {
+  flex-basis: 0;
+  min-width: 0;
+  border-radius: 4px;
+  transition: flex-grow 0.45s var(--ease);
+}
+
+.bar i:first-child {
+  border-radius: 8px 4px 4px 8px;
+}
+
+.bar i:last-child {
+  border-radius: 4px 8px 8px 4px;
+}
+
+.seg-used {
+  background: var(--seg-used);
+}
+
+.seg-buy {
+  background: var(--ink);
+}
+
+.seg-free {
+  background: var(--green);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-top: 8px;
   font-size: 13px;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
 
-.meter-after.is-over {
-  color: var(--red-ink);
-  font-weight: 600;
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.track {
-  display: flex;
+.dot {
+  width: 10px;
   height: 10px;
-  margin-top: 8px;
-  border-radius: 10px;
-  overflow: hidden;
-  background: var(--green);
+  border-radius: 3px;
+  flex: none;
 }
 
-.track i {
-  display: block;
-  height: 100%;
-  transition: width 0.45s var(--ease);
+.impact {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--card-2);
 }
 
-.track .used {
-  background: var(--line);
-  border-right: 2px solid var(--bg);
+.impact-title {
+  margin-bottom: 10px;
 }
 
-.track .ghost {
-  background: repeating-linear-gradient(45deg, #f59e0b 0 6px, #fcd34d 6px 12px);
-}
-
-.track .ghost.is-over {
-  background: repeating-linear-gradient(45deg, #dc2626 0 6px, #fca5a5 6px 12px);
+.impact-over {
+  background: var(--red-soft);
+  color: var(--red-ink);
+  font-size: 14px;
 }
 
 /* ─── Search ────────────────────────────────────────────────────────── */
@@ -376,11 +407,34 @@ a {
   font-size: 13px;
 }
 
-.sort select {
+.select {
+  position: relative;
+  display: inline-flex;
+}
+
+/* The browser's own arrow is removed. Ours sits 12px from the edge, and the
+   text has room so it never runs under it. */
+.select select {
+  appearance: none;
+  -webkit-appearance: none;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--card);
-  padding: 7px 10px;
+  padding: 8px 38px 8px 12px;
+  cursor: pointer;
+}
+
+.select select:hover {
+  border-color: var(--ink);
+}
+
+.select-chevron {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  translate: 0 -50%;
+  pointer-events: none;
+  color: var(--muted);
 }
 
 /* ─── Results ───────────────────────────────────────────────────────── */
@@ -662,11 +716,6 @@ input[type='range'] {
   font-size: 18px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-}
-
-.warn {
-  margin-top: 8px;
-  color: var(--red-ink);
 }
 
 .history li {

@@ -155,7 +155,6 @@ function Shop({ catalog: realCatalog, history }: { catalog: Catalog; history: Pr
   const [fitsOnly, setFitsOnly] = useState(false);
   const [sort, setSort] = useState<SortKey>('relevance');
   const [shown, setShown] = useState(PAGE_SIZE);
-  const [preview, setPreview] = useState<Cents | null>(null);
   const [watches, setWatches] = useState<Watch[]>(readWatches);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [simulated, setSimulated] = useState<string | null>(null);
@@ -182,7 +181,6 @@ function Shop({ catalog: realCatalog, history }: { catalog: Catalog; history: Pr
   const onBought = (purchase: Purchase) => {
     setPurchases((list) => [purchase, ...list]);
     setAccount((a) => ({ ...a, used: a.used + purchase.offer.price }));
-    setPreview(null);
   };
   const changeQuery = (next: string) => {
     setQuery(next);
@@ -191,8 +189,8 @@ function Shop({ catalog: realCatalog, history }: { catalog: Catalog; history: Pr
 
   return (
     <>
-      <LimitMeter account={account} preview={preview} />
       <main className="page">
+        <LimitSummary account={account} />
         {productId && !product && (
           <div className="panel">
             <h1>This product is not in today's feeds</h1>
@@ -211,7 +209,6 @@ function Shop({ catalog: realCatalog, history }: { catalog: Catalog; history: Pr
             watch={watches.find((w) => w.id === product.id)}
             onWatch={() => onWatch(product)}
             onBack={() => go(null)}
-            onPreview={setPreview}
             onBought={onBought}
           />
         )}
@@ -255,11 +252,14 @@ function Shop({ catalog: realCatalog, history }: { catalog: Catalog; history: Pr
                 </Toggle>
                 <label className="sort">
                   <span className="muted">Sort</span>
-                  <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
-                    <option value="relevance">Best match</option>
-                    <option value="price-asc">Lowest price</option>
-                    <option value="price-desc">Highest price</option>
-                  </select>
+                  <span className="select">
+                    <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
+                      <option value="relevance">Best match</option>
+                      <option value="price-asc">Lowest price</option>
+                      <option value="price-desc">Highest price</option>
+                    </select>
+                    <ChevronIcon />
+                  </span>
                 </label>
               </div>
             </section>
@@ -277,7 +277,6 @@ function Shop({ catalog: realCatalog, history }: { catalog: Catalog; history: Pr
                   account={account}
                   watched={isWatched(p)}
                   onOpen={() => go(p.id)}
-                  onPreview={setPreview}
                 />
               ))}
             </div>
@@ -306,34 +305,68 @@ function Shop({ catalog: realCatalog, history }: { catalog: Catalog; history: Pr
   );
 }
 
-function LimitMeter({ account, preview }: { account: Account; preview: Cents | null }) {
+/** The customer's limit: one clear number, then a bar with a legend. */
+function LimitSummary({ account }: { account: Account }) {
   const free = freeLimit(account);
-  const take = preview === null ? 0 : Math.min(preview, free);
-  const over = preview !== null && preview > free;
-  const pct = (cents: Cents) => `${(cents / account.limit) * 100}%`;
-
   return (
-    <div className="meter" aria-label="Your credit limit">
-      <div className="meter-inner">
-        <div className="meter-row">
-          <div>
-            <span className="meter-label">Free limit</span>
-            <strong className="meter-value">{whole(free)}</strong>
-            <span className="muted"> of {whole(account.limit)}</span>
-          </div>
-          <p className={`meter-after${over ? ' is-over' : ''}`} aria-live="polite">
-            {preview === null
-              ? `Example customer, ${account.rate.toLocaleString('et-EE')}% interest`
-              : over
-                ? `${whole(preview - free)} over your free limit`
-                : `After this purchase: ${whole(free - preview)} free`}
-          </p>
-        </div>
-        <div className="track" aria-hidden="true">
-          <i className="used" style={{ width: pct(account.used) }} />
-          <i className={`ghost${over ? ' is-over' : ''}`} style={{ width: pct(take) }} />
-        </div>
+    <section className="limit" aria-label="Your credit limit">
+      <div className="limit-head">
+        <p>
+          <span className="limit-label">You can spend</span>
+          <strong className="limit-value">{whole(free)}</strong>
+        </p>
+        <p className="muted small">
+          Example customer. Limit {whole(account.limit)}, {account.rate.toLocaleString('et-EE')}% interest.
+        </p>
       </div>
+      <div className="bar" aria-hidden="true">
+        <i className="seg-used" style={{ flexGrow: account.used }} />
+        <i className="seg-free" style={{ flexGrow: free }} />
+      </div>
+      <ul className="legend">
+        <li>
+          <i className="dot seg-used" /> In use {whole(account.used)}
+        </li>
+        <li>
+          <i className="dot seg-free" /> Free {whole(free)}
+        </li>
+      </ul>
+    </section>
+  );
+}
+
+/** What one purchase does to the limit. Shown next to the buy button. */
+function LimitImpact({ account, price }: { account: Account; price: Cents }) {
+  const free = freeLimit(account);
+  if (price > free) {
+    return (
+      <p className="impact impact-over">
+        This costs {whole(price - free)} more than your free limit of {whole(free)}. You can still watch the
+        price.
+      </p>
+    );
+  }
+  return (
+    <div className="impact">
+      <p className="impact-title">
+        Your limit after this purchase: <strong>{whole(free - price)} free</strong>
+      </p>
+      <div className="bar" aria-hidden="true">
+        <i className="seg-used" style={{ flexGrow: account.used }} />
+        <i className="seg-buy" style={{ flexGrow: price }} />
+        <i className="seg-free" style={{ flexGrow: free - price }} />
+      </div>
+      <ul className="legend">
+        <li>
+          <i className="dot seg-used" /> In use {whole(account.used)}
+        </li>
+        <li>
+          <i className="dot seg-buy" /> This purchase {whole(price)}
+        </li>
+        <li>
+          <i className="dot seg-free" /> Free after {whole(free - price)}
+        </li>
+      </ul>
     </div>
   );
 }
@@ -390,25 +423,16 @@ function ProductCard({
   account,
   watched,
   onOpen,
-  onPreview,
 }: {
   product: Product;
   account: Account;
   watched: boolean;
   onOpen: () => void;
-  onPreview: (price: Cents | null) => void;
 }) {
   const price = lowestPrice(product);
   const stores = product.offers.length;
   return (
-    <button
-      className="card product"
-      onClick={onOpen}
-      onMouseEnter={() => onPreview(price)}
-      onMouseLeave={() => onPreview(null)}
-      onFocus={() => onPreview(price)}
-      onBlur={() => onPreview(null)}
-    >
+    <button className="card product" onClick={onOpen}>
       <ProductImage product={product} size="card" />
       <span className="product-body">
         <span className="product-name">{product.name}</span>
@@ -436,7 +460,6 @@ function ProductView({
   watch,
   onWatch,
   onBack,
-  onPreview,
   onBought,
 }: {
   product: Product;
@@ -445,7 +468,6 @@ function ProductView({
   watch: Watch | undefined;
   onWatch: () => void;
   onBack: () => void;
-  onPreview: (price: Cents | null) => void;
   onBought: (purchase: Purchase) => void;
 }) {
   const [offerIndex, setOfferIndex] = useState(0);
@@ -459,11 +481,6 @@ function ProductView({
   const changes = history[product.id];
 
   useEffect(() => heading.current?.focus(), []);
-  useEffect(() => {
-    // After the purchase the meter shows the new limit, not a preview.
-    onPreview(bought ? null : offer.price);
-    return () => onPreview(null);
-  }, [offer.price, bought, onPreview]);
 
   return (
     <article className="detail">
@@ -563,15 +580,10 @@ function ProductView({
               The lowest payment your credit line allows for this amount is{' '}
               {money(minimumPayment(offer.price, account.rate))} a month. A fixed plan costs less interest.
             </p>
+            {!bought && <LimitImpact account={account} price={offer.price} />}
             <button className="btn buy" disabled={!ok || bought} onClick={() => setBuying(true)}>
               {bought ? 'Bought (simulated)' : `Buy at ${offer.store.name} with your limit`}
             </button>
-            {!ok && (
-              <p className="warn small">
-                This is {whole(offer.price - freeLimit(account))} over your free limit. You can still watch
-                the price.
-              </p>
-            )}
           </section>
 
           <section className="panel" aria-labelledby="history-title">
@@ -958,6 +970,14 @@ function SearchIcon() {
     <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" className="icon">
       <circle cx="11" cy="11" r="7" />
       <path d="m20 20-3.5-3.5" />
+    </svg>
+  );
+}
+
+function ChevronIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" className="icon select-chevron">
+      <path d="m6 9 6 6 6-6" />
     </svg>
   );
 }
