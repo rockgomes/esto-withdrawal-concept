@@ -828,7 +828,7 @@ function ProductView({
             </p>
             <label className="slider">
               <span>
-                Pay more and finish in <strong>{months} months</strong>
+                You can also pay more and finish in <strong>{months} months</strong>
               </span>
               <input
                 type="range"
