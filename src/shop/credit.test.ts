@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { DEMO_ACCOUNT, fits, freeLimit, minimumPathInterest, minimumPayment, plan } from './credit';
+import {
+  DEMO_ACCOUNT,
+  fits,
+  freeLimit,
+  isHighUse,
+  minimumPathInterest,
+  minimumPayment,
+  plan,
+} from './credit';
 
 describe('credit', () => {
   it('knows the free limit and what fits it', () => {
@@ -7,6 +15,11 @@ describe('credit', () => {
     expect(fits(118_000, DEMO_ACCOUNT)).toBe(true);
     expect(fits(118_001, DEMO_ACCOUNT)).toBe(false);
     expect(freeLimit({ ...DEMO_ACCOUNT, used: 200_000 })).toBe(0);
+  });
+
+  it('marks the limit as high in use from 80%', () => {
+    expect(isHighUse({ ...DEMO_ACCOUNT, limit: 150_000, used: 119_999 })).toBe(false);
+    expect(isHighUse({ ...DEMO_ACCOUNT, limit: 150_000, used: 120_000 })).toBe(true);
   });
 
   it('makes a plan whose parts add up', () => {

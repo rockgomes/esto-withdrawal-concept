@@ -19,12 +19,14 @@ import {
   MINIMUM_MONTHS,
   fits,
   freeLimit,
+  isHighUse,
   minimumPathInterest,
   minimumPayment,
   plan,
   type Account,
 } from './credit';
 import Checkout from './Checkout';
+import HowItWorks from './HowItWorks';
 import LimitImpact from './LimitImpact';
 import { PHASES, readPhase, writePhase, type Phase } from './phase';
 import Start from './Start';
@@ -528,7 +530,10 @@ function Balance({
 }) {
   const free = freeLimit(account);
   return (
-    <section className={`balance${compact ? ' is-compact' : ''}`} aria-label="Your credit limit">
+    <section
+      className={`balance${compact ? ' is-compact' : ''}${isHighUse(account) ? ' is-high-use' : ''}`}
+      aria-label="Your credit limit"
+    >
       <div className="balance-top">
         <p>
           <span className="balance-label">
@@ -823,7 +828,7 @@ function ProductView({
             </p>
             <label className="slider">
               <span>
-                Or pay more and finish in <strong>{months} months</strong>
+                Pay more and finish in <strong>{months} months</strong>
               </span>
               <input
                 type="range"
@@ -853,6 +858,7 @@ function ProductView({
               you only pay the lowest amount, it takes {MINIMUM_MONTHS} months and costs about{' '}
               {whole(minimumPathInterest(offer.price, account.rate))} in interest.
             </p>
+            <HowItWorks />
             {phase === 1 ? (
               <>
                 <a className="btn buy" href={offer.url} target="_blank" rel="noopener noreferrer">
@@ -1148,6 +1154,9 @@ function CreditLine({
           </div>
         </dl>
       </section>
+      <div className="panel how-panel">
+        <HowItWorks open />
+      </div>
       <section aria-labelledby="bought-title">
         <h2 id="bought-title" className="page-title">
           Purchases from your credit line <span className="nav-badge">NEW</span>
@@ -1221,9 +1230,9 @@ function About({
               colour means free money. So a reader can take the coloured part for the used part.
             </li>
             <li>
-              Here the used part is grey and sits above "Used limit". The free part is green, and "Balance"
-              has the same green dot. Each number has the colour of its part. With nothing in use, the bar
-              looks the same as the real one.
+              Here the used part is yellow and sits above "Used limit". It turns orange when 80% of the limit
+              is in use. The free part is green, and "Balance" has the same green dot. Each number has the
+              colour of its part. With nothing in use, the bar looks the same as the real one.
             </li>
           </ul>
           <p className="muted small">

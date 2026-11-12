@@ -3,6 +3,7 @@ import { formatMoney, formatWhole } from '../lib/format';
 import type { Cents } from '../lib/money';
 import type { Offer, Product } from './catalog';
 import { freeLimit, minimumPayment, type Account } from './credit';
+import HowItWorks from './HowItWorks';
 import LimitImpact from './LimitImpact';
 
 const money = (cents: Cents) => formatMoney(cents, 'et');
@@ -275,6 +276,7 @@ export default function Checkout({
                 amounts you can pay. The lowest amount gets smaller every month. You can pay more in any month
                 at no extra cost.
               </p>
+              <HowItWorks />
               <p className="esto-ok">
                 No application and no new contract. You signed a credit line contract before.
               </p>

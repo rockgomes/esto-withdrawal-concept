@@ -1,6 +1,6 @@
 import { formatWhole } from '../lib/format';
 import type { Cents } from '../lib/money';
-import { freeLimit, type Account } from './credit';
+import { freeLimit, isHighUse, type Account } from './credit';
 
 const whole = (cents: Cents) => formatWhole(cents, 'et');
 
@@ -16,7 +16,7 @@ export default function LimitImpact({ account, price }: { account: Account; pric
     );
   }
   return (
-    <div className="impact">
+    <div className={`impact${isHighUse(account) ? ' is-high-use' : ''}`}>
       <p className="impact-title">
         Your limit after this purchase: <strong>{whole(free - price)} free</strong>
       </p>

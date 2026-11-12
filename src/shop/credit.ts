@@ -19,6 +19,13 @@ export const DEFAULT_MONTHS = 12;
 export const MIN_MONTHS = 3;
 export const MAX_MONTHS = 36;
 
+/** From this share of the limit in use, the used part is drawn in orange. */
+export const HIGH_USE = 0.8;
+
+export function isHighUse(account: Account): boolean {
+  return account.limit > 0 && account.used / account.limit >= HIGH_USE;
+}
+
 export function freeLimit(account: Account): Cents {
   return Math.max(0, account.limit - account.used);
 }

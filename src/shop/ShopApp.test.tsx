@@ -93,6 +93,8 @@ describe('shop prototype', () => {
     expect(row).toHaveTextContent('1 079,00 €');
 
     await user.click(screen.getByRole('button', { name: 'Credit Line' }));
+    expect(screen.getByText('How a credit line works')).toBeInTheDocument();
+    expect(screen.getByText(/ESTO sends one invoice a month/)).toBeVisible();
     expect(screen.getByText('Credit used').parentElement).toHaveTextContent('1 399 €');
     expect(screen.getByText(/Your lowest monthly payment went up by/)).toBeInTheDocument();
   });

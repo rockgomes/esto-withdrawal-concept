@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { formatMoney, formatWhole } from '../lib/format';
 import type { Cents } from '../lib/money';
 import { lowestPrice, type Catalog } from './catalog';
-import { freeLimit, plan, type Account } from './credit';
+import { freeLimit, isHighUse, plan, type Account } from './credit';
 import { PHASES, type Phase } from './phase';
 import { rulerPicks } from './picks';
 import { NO_FILTERS, search } from './search';
@@ -83,7 +83,7 @@ export default function Start({
             );
           })}
         </ol>
-        <div className="band" aria-hidden="true">
+        <div className={`band${isHighUse(account) ? ' is-high-use' : ''}`} aria-hidden="true">
           <div className="band-free" style={{ flexGrow: free }}>
             <strong>{whole(free)} free</strong>
           </div>
