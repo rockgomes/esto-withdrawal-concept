@@ -843,9 +843,11 @@ function ProductView({
                 </button>
               ))}
             </div>
-            <a className="store-link" href={offer.url} target="_blank" rel="noopener noreferrer">
-              See it at {offer.store.name} (opens the store) ↗
-            </a>
+            {phase === 2 && (
+              <a className="store-link" href={offer.url} target="_blank" rel="noopener noreferrer">
+                See the real product page at {offer.store.name} ↗
+              </a>
+            )}
 
             {phase === 1 ? (
               <>
