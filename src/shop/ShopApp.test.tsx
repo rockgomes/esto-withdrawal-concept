@@ -42,7 +42,7 @@ describe('shop prototype', () => {
     expect(screen.queryByRole('button', { name: /iPhone 17 256GB/ })).not.toBeInTheDocument();
   });
 
-  it('compares stores, then pays from the credit line on the ESTO checkout page (phase 2)', async () => {
+  it('compares stores, then pays from the credit line on the ESTO payment page (phase 2)', async () => {
     const user = userEvent.setup();
     render(<ShopApp />);
     await user.click(await screen.findByRole('button', { name: /Apple iPhone 17 256GB/ }));
@@ -53,31 +53,62 @@ describe('shop prototype', () => {
     expect(offers[1]).toHaveTextContent('2 to 4 working days');
 
     await user.click(screen.getByRole('button', { name: 'Buy at ONOFF with your credit line' }));
-    const dialog = screen.getByRole('dialog');
-    expect(dialog).toHaveTextContent('You are on the ONOFF site. This page is a stand-in.');
-    await user.click(within(dialog).getByRole('radio', { name: /Card/ }));
-    expect(within(dialog).getByRole('button', { name: 'Continue to ESTO' })).toBeDisabled();
-    await user.click(within(dialog).getByRole('radio', { name: /ESTO/ }));
-    await user.click(within(dialog).getByRole('button', { name: 'Continue to ESTO' }));
-    expect(dialog).toHaveTextContent("You are on ESTO's payment page");
+    const flow = screen.getByRole('dialog');
+    expect(flow).toHaveTextContent('You are on the ONOFF site. This page is a stand-in.');
+    await user.click(within(flow).getByRole('radio', { name: /Card/ }));
+    expect(within(flow).getByRole('button', { name: 'Continue to ESTO' })).toBeDisabled();
+    await user.click(within(flow).getByRole('radio', { name: /ESTO/ }));
+    await user.click(within(flow).getByRole('button', { name: 'Continue to ESTO' }));
 
-    expect(within(dialog).getByRole('radio', { name: /Credit line/ })).toHaveAttribute(
+    // ESTO asks who the customer is before it can offer the credit line.
+    await user.click(within(flow).getByRole('button', { name: 'Log in as a customer with a credit line' }));
+    expect(within(flow).getByRole('radio', { name: /Credit line/ })).toHaveAttribute('aria-checked', 'true');
+    expect(flow).toHaveTextContent('12 × 108,99 €');
+    expect(flow).toHaveTextContent('No application and no new contract');
+
+    // Another method goes on as today, with no push back to the credit line.
+    await user.click(within(flow).getByRole('radio', { name: 'Hire purchase' }));
+    await user.click(within(flow).getByRole('button', { name: 'Continue with Hire purchase' }));
+    expect(within(flow).getByRole('heading', { name: 'The demo stops here' })).toBeInTheDocument();
+    await user.click(within(flow).getByRole('button', { name: 'Back to the payment methods' }));
+
+    await user.click(within(flow).getByRole('radio', { name: /Credit line/ }));
+    await user.click(within(flow).getByRole('button', { name: /from my credit line/ }));
+    expect(within(flow).getByRole('heading', { name: 'Order confirmed' })).toBeInTheDocument();
+    expect(flow).toHaveTextContent('No order is made');
+
+    // Back in the ESTO app, the purchase is on the dashboard and in Transactions.
+    await user.click(within(flow).getByRole('button', { name: 'See the purchase in the ESTO app' }));
+    expect(screen.getByRole('heading', { name: 'Latest purchase' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Your credit limit')).toHaveTextContent('101 €');
+    await user.click(screen.getByRole('button', { name: 'All transactions' }));
+    expect(screen.getByRole('heading', { name: 'Transactions' })).toBeInTheDocument();
+    expect(screen.getByText(/Your next monthly payment went up by/)).toBeInTheDocument();
+  });
+
+  it('lets a customer buy above the free limit with another method, and hides the credit line from a customer without one', async () => {
+    const user = userEvent.setup();
+    render(<ShopApp />);
+    await user.click(await screen.findByRole('button', { name: /Samsung QLED/ }));
+    await user.click(screen.getByRole('button', { name: /^Buy at \w+$/ }));
+    const flow = screen.getByRole('dialog');
+    await user.click(within(flow).getByRole('button', { name: 'Continue to ESTO' }));
+    await user.click(within(flow).getByRole('button', { name: 'Log in as a customer with a credit line' }));
+
+    expect(within(flow).getByRole('radio', { name: /Credit line.*Limit too low/ })).toBeInTheDocument();
+    expect(within(flow).getByRole('radio', { name: 'Hire purchase' })).toHaveAttribute(
       'aria-checked',
       'true',
     );
-    expect(dialog).toHaveTextContent('12 × 108,99 €');
-    expect(dialog).toHaveTextContent('No application and no new contract');
+    await user.click(within(flow).getByRole('radio', { name: /Credit line/ }));
+    expect(flow).toHaveTextContent(/This order needs .* more/);
+    expect(within(flow).queryByRole('button', { name: /from my credit line/ })).not.toBeInTheDocument();
 
-    await user.click(within(dialog).getByRole('radio', { name: 'Hire purchase' }));
-    expect(dialog).toHaveTextContent('works as it does today');
-    await user.click(within(dialog).getByRole('button', { name: 'Use my credit line' }));
-
-    await user.click(within(dialog).getByRole('button', { name: /from my credit line/ }));
-    expect(within(dialog).getByRole('heading', { name: 'Order confirmed' })).toBeInTheDocument();
-    expect(dialog).toHaveTextContent('You are on the ONOFF site');
-    expect(dialog).toHaveTextContent('No order is made');
-    await user.click(within(dialog).getByRole('button', { name: 'Open the ESTO app' }));
-    expect(screen.getByLabelText('Your credit limit')).toHaveTextContent('101 €');
+    await user.click(within(flow).getByRole('button', { name: /^Back to/ }));
+    await user.click(within(flow).getByRole('button', { name: 'Continue to ESTO' }));
+    await user.click(within(flow).getByRole('button', { name: 'Log in as a customer without one' }));
+    expect(within(flow).queryByRole('radio', { name: /Credit line/ })).not.toBeInTheDocument();
+    expect(within(flow).getAllByRole('radio')).toHaveLength(3);
   });
 
   it('sends the person to the real store page in phase 1', async () => {

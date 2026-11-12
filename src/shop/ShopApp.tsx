@@ -71,6 +71,10 @@ interface Purchase {
   offer: Offer;
   months: number;
   monthly: Cents;
+  /** ISO date and time of the payment. */
+  date: string;
+  /** What the next monthly payment went up by. */
+  raise: Cents;
 }
 
 type Load =
@@ -78,7 +82,13 @@ type Load =
   | { status: 'error'; message: string }
   | { status: 'ready'; catalog: Catalog; history: PriceHistory };
 
-type Page = 'dashboard' | 'shop';
+type Page = 'dashboard' | 'shop' | 'transactions';
+
+const PAGE_HASH: Record<Page, string> = {
+  dashboard: '#/dashboard',
+  shop: '#/',
+  transactions: '#/transactions',
+};
 
 interface Route {
   page: Page;
@@ -89,7 +99,9 @@ function readRoute(): Route {
   const hash = window.location.hash;
   const product = hash.match(/^#\/p\/(.+)$/);
   if (product) return { page: 'shop', productId: decodeURIComponent(product[1]) };
-  return { page: hash === '#/dashboard' ? 'dashboard' : 'shop', productId: null };
+  const page: Page =
+    hash === '#/dashboard' ? 'dashboard' : hash === '#/transactions' ? 'transactions' : 'shop';
+  return { page, productId: null };
 }
 
 function useRoute(): [Route, (hash: string) => void] {
@@ -147,7 +159,7 @@ export default function ShopApp() {
   }, [notice]);
 
   const notBuilt = (name: string) =>
-    setNotice(`"${name}" is not part of this concept. Find products and Dashboard are.`);
+    setNotice(`"${name}" is not part of this concept. Dashboard, Find products, and Transactions are.`);
 
   if (phase === null) {
     return (
@@ -235,7 +247,7 @@ const NAV: { label: string; icon: IconName; page?: Page; badge?: string; gapBefo
   { label: 'Find products', icon: 'find', page: 'shop', badge: 'NEW' },
   { label: 'Credit line', icon: 'card' },
   { label: 'Invoices', icon: 'doc' },
-  { label: 'Transactions', icon: 'swap' },
+  { label: 'Transactions', icon: 'swap', page: 'transactions' },
   { label: 'Agreements', icon: 'file' },
   { label: 'Insurance', icon: 'shield', gapBefore: true },
   { label: 'Premium', icon: 'gem' },
@@ -255,7 +267,7 @@ function Sidebar({
   const [open, setOpen] = useState(false);
   const pick = (item: (typeof NAV)[number]) => {
     setOpen(false);
-    if (item.page) onNavigate(item.page === 'dashboard' ? '#/dashboard' : '#/');
+    if (item.page) onNavigate(PAGE_HASH[item.page]);
     else onOther(item.label);
   };
   return (
@@ -363,7 +375,14 @@ function Shop({
             onShop={() => go(null)}
             onOpen={go}
             onOther={onOther}
+            purchases={purchases}
+            onTransactions={() => navigate('#/transactions')}
           />
+        ) : page === 'transactions' ? (
+          <>
+            <Balance account={account} compact />
+            <Transactions purchases={purchases} onShop={() => go(null)} />
+          </>
         ) : (
           <Balance account={account} compact />
         )}
@@ -386,6 +405,7 @@ function Shop({
             onWatch={() => onWatch(product)}
             onBack={() => go(null)}
             onBought={onBought}
+            onSeePurchase={() => navigate('#/dashboard')}
             phase={phase}
           />
         )}
@@ -466,7 +486,6 @@ function Shop({
             )}
 
             <WatchList watches={watches} catalog={catalog} account={account} onOpen={go} />
-            <PurchaseList purchases={purchases} />
           </>
         )}
         <About
@@ -531,6 +550,8 @@ function Dashboard({
   onShop,
   onOpen,
   onOther,
+  purchases,
+  onTransactions,
 }: {
   account: Account;
   catalog: Catalog;
@@ -538,6 +559,8 @@ function Dashboard({
   onShop: () => void;
   onOpen: (id: string) => void;
   onOther: (name: string) => void;
+  purchases: Purchase[];
+  onTransactions: () => void;
 }) {
   const picks = useMemo(
     () =>
@@ -560,6 +583,17 @@ function Dashboard({
           Shop with your limit
         </button>
       </Balance>
+      {purchases.length > 0 && (
+        <section className="panel" aria-labelledby="latest-title">
+          <div className="panel-head">
+            <h2 id="latest-title">Latest purchase</h2>
+            <button className="link" onClick={onTransactions}>
+              All transactions
+            </button>
+          </div>
+          <PurchaseRows purchases={purchases.slice(0, 1)} />
+        </section>
+      )}
       <DropList drops={drops} account={account} onOpen={onOpen} />
       <section className="panel" aria-labelledby="picks-title">
         <div className="panel-head">
@@ -590,8 +624,8 @@ function LimitImpact({ account, price }: { account: Account; price: Cents }) {
   if (price > free) {
     return (
       <p className="impact impact-over">
-        This costs {whole(price - free)} more than your free limit of {whole(free)}. You can still watch the
-        price.
+        This costs {whole(price - free)} more than your free limit of {whole(free)}. You can still buy it with
+        another ESTO method at the store, or watch the price.
       </p>
     );
   }
@@ -710,6 +744,7 @@ function ProductView({
   onWatch,
   onBack,
   onBought,
+  onSeePurchase,
   phase,
 }: {
   product: Product;
@@ -719,6 +754,7 @@ function ProductView({
   onWatch: () => void;
   onBack: () => void;
   onBought: (purchase: Purchase) => void;
+  onSeePurchase: () => void;
   phase: Phase;
 }) {
   const [offerIndex, setOfferIndex] = useState(0);
@@ -844,8 +880,12 @@ function ProductView({
             ) : (
               <>
                 {!bought && <LimitImpact account={account} price={offer.price} />}
-                <button className="btn buy" disabled={!ok || bought} onClick={() => setBuying(true)}>
-                  {bought ? 'Paid (simulated)' : `Buy at ${offer.store.name} with your credit line`}
+                <button className="btn buy" disabled={bought} onClick={() => setBuying(true)}>
+                  {bought
+                    ? 'Paid (simulated)'
+                    : ok
+                      ? `Buy at ${offer.store.name} with your credit line`
+                      : `Buy at ${offer.store.name}`}
                 </button>
               </>
             )}
@@ -886,7 +926,18 @@ function ProductView({
           onClose={() => setBuying(false)}
           onPaid={() => {
             setBought(true);
-            onBought({ product, offer, months, monthly: p.monthly });
+            onBought({
+              product,
+              offer,
+              months,
+              monthly: p.monthly,
+              date: new Date().toISOString(),
+              raise: minimumPayment(offer.price, account.rate),
+            });
+          }}
+          onOpenApp={() => {
+            setBuying(false);
+            onSeePurchase();
           }}
         />
       )}
@@ -975,27 +1026,49 @@ function WatchList({
   );
 }
 
-function PurchaseList({ purchases }: { purchases: Purchase[] }) {
-  if (purchases.length === 0) return null;
+function PurchaseRows({ purchases }: { purchases: Purchase[] }) {
   return (
-    <section className="panel" aria-labelledby="bought-title">
-      <h2 id="bought-title">Paid with your credit line (simulated)</h2>
-      <ul className="rows">
-        {purchases.map((b, i) => (
-          <li key={i} className="row-static">
-            <span>
-              {b.product.name}
-              <span className="muted small"> at {b.offer.store.name}</span>
+    <ul className="rows">
+      {purchases.map((b) => (
+        <li key={b.date + b.product.id} className="row-static">
+          <span>
+            <strong>{b.offer.store.name}</strong>
+            <span className="tx-name">{b.product.name}</span>
+            <span className="muted small">
+              {formatDateTime(b.date)}. Paid from your credit line. Your next monthly payment went up by{' '}
+              {money(b.raise)}.
             </span>
-            <span className="row-side">
-              <strong>{money(b.offer.price)}</strong>
-              <span className="muted small">
-                {b.months} × {money(b.monthly)}
-              </span>
-            </span>
-          </li>
-        ))}
-      </ul>
+          </span>
+          <span className="row-side">
+            <strong>−{money(b.offer.price)}</strong>
+            <span className="badge ok">Paid</span>
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function Transactions({ purchases, onShop }: { purchases: Purchase[]; onShop: () => void }) {
+  return (
+    <section className="panel" aria-labelledby="tx-title">
+      <h1 id="tx-title">Transactions</h1>
+      {purchases.length === 0 ? (
+        <>
+          <p className="muted">
+            No purchases from your credit line yet. A purchase shows here as soon as you pay at a store.
+          </p>
+          <button className="btn" onClick={onShop}>
+            Find a product
+          </button>
+        </>
+      ) : (
+        <PurchaseRows purchases={purchases} />
+      )}
+      <p className="muted small tx-note">
+        This page shows only purchases made in this prototype. They are simulated. The real Transactions page
+        also has withdrawals and payments.
+      </p>
     </section>
   );
 }

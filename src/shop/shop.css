@@ -1756,6 +1756,38 @@ input[type='range'] {
   outline-color: #1d4ed8;
 }
 
+.addr-close.is-main {
+  background: #0a0a0a;
+  border-color: #0a0a0a;
+  color: #ffffff;
+}
+
+.esto-short {
+  margin: 14px 0 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--red-soft);
+  color: var(--red-ink);
+  font-weight: 500;
+}
+
+.method .badge {
+  white-space: nowrap;
+}
+
+.esto-card .btn.buy + .btn.buy {
+  margin-top: 8px;
+}
+
+.tx-name,
+.row-static > span:first-child > .small {
+  display: block;
+}
+
+.tx-note {
+  margin: 16px 0 0;
+}
+
 /* ESTO's payment page. */
 .ep {
   max-width: 440px;

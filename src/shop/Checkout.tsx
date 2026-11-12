@@ -7,13 +7,12 @@ import { freeLimit, minimumPayment, plan, type Account } from './credit';
 const money = (cents: Cents) => formatMoney(cents, 'et');
 const whole = (cents: Cents) => formatWhole(cents, 'et');
 
-type Step = 'store' | 'esto' | 'confirmed';
+type Step = 'store' | 'login' | 'esto' | 'today' | 'confirmed';
 type Method = 'credit-line' | 'hire-purchase' | 'esto-3' | 'pay-later';
 type StorePay = 'bank' | 'card' | 'esto';
 
-/** ESTO's checkout methods today, plus the new one. */
-const METHODS: { id: Method; name: string; isNew?: boolean }[] = [
-  { id: 'credit-line', name: 'Credit line', isNew: true },
+/** ESTO's checkout methods today. "Credit line" is the new one. */
+const TODAY_METHODS: { id: Method; name: string }[] = [
   { id: 'hire-purchase', name: 'Hire purchase' },
   { id: 'esto-3', name: 'ESTO 3' },
   { id: 'pay-later', name: 'Pay Later' },
@@ -34,15 +33,17 @@ function hostOf(url: string, fallback: string): string {
 }
 
 /**
- * Phase 2: the purchase, as three full pages in three places.
+ * Phase 2: the purchase, as full pages in three places.
  *
  * 1. The store's checkout. A stand-in: the real page belongs to the store.
- * 2. ESTO's payment page, where the store sends the customer today. The new
- *    part is one more method on it: "Credit line".
+ *    The store does not know if the customer has a credit line.
+ * 2. ESTO's payment page, where the store sends the customer today. ESTO
+ *    asks who the customer is. Only then can it offer "Credit line", and
+ *    only when the free limit covers the order.
  * 3. The store again, with the order confirmed.
  *
  * The bar at the top works like a browser address bar. It says which site
- * the customer is on.
+ * the customer is on. It also holds the demo's own controls.
  */
 export default function Checkout({
   product,
@@ -51,6 +52,7 @@ export default function Checkout({
   account,
   onClose,
   onPaid,
+  onOpenApp,
 }: {
   product: Product;
   offer: Offer;
@@ -58,18 +60,23 @@ export default function Checkout({
   account: Account;
   onClose: () => void;
   onPaid: () => void;
+  /** After the order is confirmed: go and see the purchase in the ESTO app. */
+  onOpenApp: () => void;
 }) {
   const [step, setStep] = useState<Step>('store');
   const [storePay, setStorePay] = useState<StorePay>('esto');
-  const [method, setMethod] = useState<Method>('credit-line');
-  const heading = useRef<HTMLHeadingElement>(null);
-  const p = plan(offer.price, account, months);
+  const [hasLine, setHasLine] = useState(true);
   // Fixed when the flow opens, so the numbers do not move after the payment.
   const [freeBefore] = useState(() => freeLimit(account));
+  const enough = offer.price <= freeBefore;
+  const [method, setMethod] = useState<Method>(enough ? 'credit-line' : 'hire-purchase');
+  const heading = useRef<HTMLHeadingElement>(null);
+  const p = plan(offer.price, account, months);
   const freeAfter = freeBefore - offer.price;
   const store = offer.store.name;
   const storeHost = hostOf(offer.store.site || offer.url, store);
-  const onStore = step !== 'esto';
+  const onStore = step === 'store' || step === 'confirmed';
+  const methodName = TODAY_METHODS.find((m) => m.id === method)?.name ?? 'Credit line';
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -84,9 +91,25 @@ export default function Checkout({
 
   useEffect(() => heading.current?.focus(), [step]);
 
+  const logIn = (withLine: boolean) => {
+    setHasLine(withLine);
+    setMethod(withLine && enough ? 'credit-line' : 'hire-purchase');
+    setStep('esto');
+  };
+
   const pay = () => {
     onPaid();
     setStep('confirmed');
+  };
+
+  const where: Record<Step, string> = {
+    store: `You are on the ${store} site. This page is a stand-in. The store does not know if you have a credit line.`,
+    login: 'You are on ESTO. It asks who you are, as it does today. After that it can check your limit.',
+    esto: hasLine
+      ? "You are on ESTO's payment page. The new part is the Credit line option."
+      : "You are on ESTO's payment page. This customer has no credit line, so the page is as it is today.",
+    today: "You are on ESTO's payment page. From here it is the flow of today.",
+    confirmed: `ESTO sent you back to ${store}, as it does today. This page is a stand-in.`,
   };
 
   const order = (
@@ -111,15 +134,16 @@ export default function Checkout({
           <LockIcon />
           <span>{onStore ? storeHost : 'esto.ee'}</span>
         </p>
-        <p className="addr-what">
-          Step {step === 'store' ? 1 : step === 'esto' ? 2 : 3} of 3.{' '}
-          {onStore
-            ? `You are on the ${store} site. This page is a stand-in.`
-            : "You are on ESTO's payment page. The new part is the Credit line option."}
-        </p>
-        <button className="addr-close" onClick={onClose}>
-          Leave the demo
-        </button>
+        <p className="addr-what">{where[step]}</p>
+        {step === 'confirmed' ? (
+          <button className="addr-close is-main" onClick={onOpenApp}>
+            See the purchase in the ESTO app
+          </button>
+        ) : (
+          <button className="addr-close" onClick={onClose}>
+            Leave the demo
+          </button>
+        )}
       </div>
 
       {step === 'store' && (
@@ -157,7 +181,7 @@ export default function Checkout({
                   </label>
                 ))}
               </div>
-              <button className="st-btn" disabled={storePay !== 'esto'} onClick={() => setStep('esto')}>
+              <button className="st-btn" disabled={storePay !== 'esto'} onClick={() => setStep('login')}>
                 Continue to ESTO
               </button>
               <p className="st-note">
@@ -167,6 +191,34 @@ export default function Checkout({
               </p>
             </section>
           </div>
+        </div>
+      )}
+
+      {step === 'login' && (
+        <div className="ep">
+          <div className="esto-head">
+            <span className="wordmark">esto</span>
+            <span className="muted small">Order from {store}</span>
+          </div>
+          <h1 id="flow-title" ref={heading} tabIndex={-1} className="ep-title">
+            Log in to continue
+          </h1>
+          <div className="esto-card">
+            <p className="esto-price">{money(offer.price)}</p>
+            <p className="muted small">{product.name}</p>
+            <p className="demo-note">
+              Stand-in for ESTO's own login. Choose who logs in, to see what ESTO shows each customer.
+            </p>
+            <button className="btn buy" onClick={() => logIn(true)}>
+              Log in as a customer with a credit line
+            </button>
+            <button className="btn buy outline" onClick={() => logIn(false)}>
+              Log in as a customer without one
+            </button>
+          </div>
+          <button className="link" onClick={() => setStep('store')}>
+            Back to {store}
+          </button>
         </div>
       )}
 
@@ -180,7 +232,22 @@ export default function Checkout({
             How do you want to pay?
           </h1>
           <div className="methods" role="radiogroup" aria-label="How do you want to pay?">
-            {METHODS.map((m) => (
+            {hasLine && (
+              <button
+                role="radio"
+                aria-checked={method === 'credit-line'}
+                className="method"
+                onClick={() => setMethod('credit-line')}
+              >
+                Credit line
+                {enough ? (
+                  <span className="nav-badge">NEW</span>
+                ) : (
+                  <span className="badge no">Limit too low</span>
+                )}
+              </button>
+            )}
+            {TODAY_METHODS.map((m) => (
               <button
                 key={m.id}
                 role="radio"
@@ -189,12 +256,11 @@ export default function Checkout({
                 onClick={() => setMethod(m.id)}
               >
                 {m.name}
-                {m.isNew && <span className="nav-badge">NEW</span>}
               </button>
             ))}
           </div>
 
-          {method === 'credit-line' ? (
+          {method === 'credit-line' && enough && (
             <div className="esto-card">
               <p className="esto-price">{money(offer.price)}</p>
               <p className="muted small">{product.name}</p>
@@ -208,11 +274,11 @@ export default function Checkout({
                   <dd>{whole(freeAfter)}</dd>
                 </div>
                 <div>
-                  <dt>Lowest payment each month</dt>
+                  <dt>Your next monthly payment goes up by</dt>
                   <dd>{money(minimumPayment(offer.price, account.rate))}</dd>
                 </div>
                 <div>
-                  <dt>Your plan</dt>
+                  <dt>Your plan, if you pay it off in {months} months</dt>
                   <dd>
                     {months} × {money(p.monthly)}
                   </dd>
@@ -225,21 +291,59 @@ export default function Checkout({
                 Pay {money(offer.price)} from my credit line
               </button>
             </div>
-          ) : (
+          )}
+
+          {method === 'credit-line' && !enough && (
             <div className="esto-card">
               <p className="esto-price">{money(offer.price)}</p>
-              <p className="muted">
-                {METHODS.find((m) => m.id === method)?.name} works as it does today: an application, then a
-                new contract to sign. This demo does not follow it.
+              <p className="muted small">{product.name}</p>
+              <p className="esto-short">
+                Your free limit is {whole(freeBefore)}. This order needs {whole(offer.price - freeBefore)}{' '}
+                more.
               </p>
-              <button className="btn buy" onClick={() => setMethod('credit-line')}>
-                Use my credit line
+              <p className="muted">
+                Choose another method above to buy it now. You can also ask for a higher limit in the ESTO app
+                and come back.
+              </p>
+            </div>
+          )}
+
+          {method !== 'credit-line' && (
+            <div className="esto-card">
+              <p className="esto-price">{money(offer.price)}</p>
+              <p className="muted small">{product.name}</p>
+              <p className="muted">
+                Next: an application, then a contract to sign. This is how it works today.
+              </p>
+              <button className="btn buy" onClick={() => setStep('today')}>
+                Continue with {methodName}
               </button>
             </div>
           )}
           <button className="link" onClick={() => setStep('store')}>
             Back to {store}
           </button>
+        </div>
+      )}
+
+      {step === 'today' && (
+        <div className="ep">
+          <div className="esto-head">
+            <span className="wordmark">esto</span>
+            <span className="muted small">Order from {store}</span>
+          </div>
+          <div className="esto-card">
+            <h1 id="flow-title" ref={heading} tabIndex={-1} className="ep-title">
+              The demo stops here
+            </h1>
+            <p className="muted">
+              {methodName} goes on as it does today: ESTO's application, a contract to sign, and then back to{' '}
+              {store}. This concept does not change these steps, so the demo does not rebuild them.
+            </p>
+            <button className="btn buy" onClick={() => setStep('esto')}>
+              Back to the payment methods
+            </button>
+          </div>
         </div>
       )}
 
@@ -257,21 +361,13 @@ export default function Checkout({
               <h1 id="flow-title" ref={heading} tabIndex={-1}>
                 Order confirmed
               </h1>
-              <p>
-                ESTO paid {store} for this order. {store} sends it as usual.
-              </p>
+              <p>Thank you. We send your order as usual.</p>
               {order}
               <dl className="st-total">
                 <dt>Paid with ESTO</dt>
                 <dd>{money(offer.price)}</dd>
               </dl>
-              <p className="st-note">
-                Simulated. No order is made, and no money moves. In the ESTO app, the free limit is now{' '}
-                {whole(freeAfter)}.
-              </p>
-              <button className="st-btn" onClick={onClose}>
-                Open the ESTO app
-              </button>
+              <p className="st-note">Simulated. No order is made, and no money moves.</p>
             </section>
           </div>
         </div>
