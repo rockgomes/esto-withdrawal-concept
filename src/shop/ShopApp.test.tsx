@@ -145,13 +145,13 @@ describe('shop prototype', () => {
     ]) {
       expect(screen.getByRole('heading', { name: title })).toBeInTheDocument();
     }
-    expect(screen.getByRole('heading', { name: /Pay at a store from your limit/ })).toBeInTheDocument();
     expect(screen.queryByText('Credit used')).not.toBeInTheDocument();
-    // The thorough part: the facts, and one example in numbers.
+    // Two ways to use the limit, side by side, each with its button.
+    expect(screen.getByRole('heading', { name: 'Two ways to use your limit' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Pay at a store/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Find a product' })).toBeInTheDocument();
+    // The facts in numbers.
     expect(screen.getByText('From 19% a year')).toBeInTheDocument();
-    const row = screen.getByRole('row', { name: /Month 1 / });
-    expect(row).toHaveTextContent('8,33 €');
-    expect(row).toHaveTextContent('39,25 €');
 
     await user.click(screen.getByRole('tab', { name: 'FAQ' }));
     expect(window.location.hash).toBe('#/credit-line?tab=faq');
@@ -208,7 +208,8 @@ describe('shop prototype', () => {
     expect(screen.queryByText(/Purchases from your credit line/)).not.toBeInTheDocument();
     await user.click(screen.getByRole('tab', { name: 'How it works' }));
     expect(screen.getByRole('heading', { name: 'Payments replenish balance' })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: /Pay at a store from your limit/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /Pay at a store/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'How to use your limit' })).toBeInTheDocument();
     await user.click(screen.getByRole('tab', { name: 'FAQ' }));
     expect(screen.queryByText(/Can I pay at a store from my credit line/)).not.toBeInTheDocument();
     await user.click(within(nav).getByRole('button', { name: /Find products/ }));

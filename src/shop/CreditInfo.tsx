@@ -1,27 +1,25 @@
-import { formatMoney, formatWhole } from '../lib/format';
+import { formatWhole } from '../lib/format';
 import type { Cents } from '../lib/money';
-import { lowestPaymentParts, type Account } from './credit';
+import type { Account } from './credit';
 import type { Phase } from './phase';
 
-const money = (cents: Cents) => formatMoney(cents, 'et');
 const whole = (cents: Cents) => formatWhole(cents, 'et');
-
-const EXAMPLE: Cents = 100_000;
-const EXAMPLE_MONTHS = [1, 12, 60, 120];
 
 /**
  * The "How it works" tab of the Credit Line page. First the short blocks, as
  * on the real ESTO page: a small picture, a title, and one or two sentences.
- * Then the same thing in numbers, for a person who wants the full picture.
+ * Then the two ways to use the limit, and the facts in numbers.
  */
 export function CreditHow({
   account,
   phase,
   onShop,
+  onOther,
 }: {
   account: Account;
   phase: Phase;
   onShop: () => void;
+  onOther: (name: string) => void;
 }) {
   return (
     <>
@@ -75,26 +73,37 @@ export function CreditHow({
             <h3>Payments replenish balance</h3>
             <p>Monthly repayments replenish your withdrawable credit amount</p>
           </article>
-
-          {phase === 2 && (
-            <article className="tile is-new">
-              <div className="tile-pic pic-store" aria-hidden="true">
-                <span>Bank link</span>
-                <span>Card</span>
-                <span className="is-on">ESTO</span>
+          <section className="twoways" aria-labelledby="twoways-title">
+            <h3 id="twoways-title">{phase === 2 ? 'Two ways to use your limit' : 'How to use your limit'}</h3>
+            <div className="twoways-row">
+              <div className="way-box">
+                <h4>Withdraw money</h4>
+                <ol>
+                  <li>Choose an amount.</li>
+                  <li>The money goes to your bank account.</li>
+                  <li>It arrives in 1 to 3 working days, or at once for 19,90 €.</li>
+                </ol>
+                <button className="btn" onClick={() => onOther('Withdraw money')}>
+                  Withdraw money
+                </button>
               </div>
-              <h3>
-                Pay at a store from your limit <span className="nav-badge">NEW</span>
-              </h3>
-              <p>
-                At a store checkout, choose ESTO and pay from your credit line. There is no application and no
-                new contract.
-              </p>
-              <button className="link" onClick={onShop}>
-                Find a product
-              </button>
-            </article>
-          )}
+              {phase === 2 && (
+                <div className="way-box">
+                  <h4>
+                    Pay at a store <span className="nav-badge">NEW</span>
+                  </h4>
+                  <ol>
+                    <li>Find a product.</li>
+                    <li>At the store checkout, choose ESTO. Then choose Credit line.</li>
+                    <li>That is all. No application and no new contract.</li>
+                  </ol>
+                  <button className="btn" onClick={onShop}>
+                    Find a product
+                  </button>
+                </div>
+              )}
+            </div>
+          </section>
         </div>
       </section>
 
@@ -132,50 +141,6 @@ export function CreditHow({
             <dd>1 to 3 working days, or at once for 19,90 €</dd>
           </div>
         </dl>
-      </section>
-
-      <section aria-labelledby="example-title">
-        <h2 id="example-title" className="page-title">
-          An example: you use {whole(EXAMPLE)}
-        </h2>
-        <div className="table-wrap">
-          <table className="tx">
-            <thead>
-              <tr>
-                <th scope="col">Invoice</th>
-                <th scope="col" className="num">
-                  Pays back what you used
-                </th>
-                <th scope="col" className="num">
-                  Interest
-                </th>
-                <th scope="col" className="num">
-                  You pay
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {EXAMPLE_MONTHS.map((month) => {
-                const parts = lowestPaymentParts(EXAMPLE, account.rate, month);
-                return (
-                  <tr key={month}>
-                    <th scope="row">Month {month}</th>
-                    <td className="num">{money(parts.fixed)}</td>
-                    <td className="num">{money(parts.interest)}</td>
-                    <td className="num">
-                      <strong>{money(parts.total)}</strong>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        <p className="muted small tx-note">
-          These are the lowest payments, at the example rate of {account.rate.toLocaleString('et-EE')}% a
-          year. Your own rate can be lower. You can pay more in any month. Then you finish sooner and pay less
-          interest.
-        </p>
       </section>
     </>
   );

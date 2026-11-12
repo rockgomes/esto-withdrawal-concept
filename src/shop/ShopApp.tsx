@@ -1192,7 +1192,7 @@ function CreditLine({
         </button>
       </div>
       {tab === 'how' ? (
-        <CreditHow account={account} phase={phase} onShop={onShop} />
+        <CreditHow account={account} phase={phase} onShop={onShop} onOther={onOther} />
       ) : tab === 'faq' ? (
         <CreditFaq phase={phase} />
       ) : (

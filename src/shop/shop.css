@@ -2159,6 +2159,54 @@ h2.page-title {
   color: var(--ink);
 }
 
+.twoways {
+  grid-column: 1 / -1;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--card);
+}
+
+.twoways h3 {
+  margin: 0 0 16px;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+}
+
+.twoways-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.way-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 18px;
+  border-radius: 12px;
+  background: var(--card-2);
+}
+
+.way-box h4 {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+.way-box ol {
+  margin: 0 0 18px;
+  padding-left: 20px;
+  list-style: decimal;
+}
+
+.way-box li + li {
+  margin-top: 4px;
+}
+
+.way-box .btn {
+  margin-top: auto;
+}
+
 .faq details {
   margin-bottom: 10px;
   border: 1px solid var(--line);
