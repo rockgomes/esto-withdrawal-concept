@@ -256,17 +256,23 @@ export default function Checkout({
               <LimitImpact account={{ ...account, used: usedBefore }} price={offer.price} />
               <dl className="lines">
                 <div>
-                  <dt>Lowest monthly payment now</dt>
-                  <dd>{money(payNow)}</dd>
+                  <dt>Lowest monthly payment for this purchase</dt>
+                  <dd>{money(payAfter - payNow)}</dd>
                 </div>
-                <div>
-                  <dt>Lowest monthly payment after this purchase</dt>
+                {usedBefore > 0 && (
+                  <div>
+                    <dt>Already on your monthly invoice, for the {whole(usedBefore)} in use</dt>
+                    <dd>{money(payNow)}</dd>
+                  </div>
+                )}
+                <div className="is-sum">
+                  <dt>Your monthly invoice after this purchase</dt>
                   <dd>{money(payAfter)}</dd>
                 </div>
               </dl>
               <p className="muted small pay-how">
-                You get one invoice a month. This is the lowest amount on it, and it goes down each month. You
-                can pay more in any month at no extra cost.
+                You get one invoice a month for your whole credit line. These are the lowest amounts. They go
+                down each month, and you can pay more in any month at no extra cost.
               </p>
               <p className="esto-ok">
                 No application and no new contract. You signed a credit line contract before.

@@ -64,7 +64,8 @@ describe('shop prototype', () => {
     expect(within(flow).getByRole('heading', { name: 'Confirm who you are' })).toBeInTheDocument();
     await user.click(within(flow).getByRole('button', { name: 'Smart-ID' }));
     expect(within(flow).getByRole('radio', { name: /Credit line/ })).toHaveAttribute('aria-checked', 'true');
-    expect(flow).toHaveTextContent('Lowest monthly payment after this purchase');
+    expect(flow).toHaveTextContent('Lowest monthly payment for this purchase');
+    expect(flow).toHaveTextContent('Your monthly invoice after this purchase');
     expect(flow).toHaveTextContent('pay more in any month at no extra cost');
     expect(flow).toHaveTextContent('No application and no new contract');
 

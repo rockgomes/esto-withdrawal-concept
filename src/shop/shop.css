@@ -1944,6 +1944,11 @@ h2.page-title {
   font-weight: 500;
 }
 
+.lines .is-sum dt {
+  color: var(--ink);
+  font-weight: 600;
+}
+
 .pay-how {
   margin: 10px 0 0;
 }
