@@ -71,7 +71,7 @@ describe('shop prototype', () => {
     await user.click(within(dialog).getByRole('button', { name: /from my credit line/ }));
     expect(within(dialog).getByRole('heading', { name: 'Paid from your credit line' })).toBeInTheDocument();
     expect(dialog).toHaveTextContent('No order is made');
-    await user.click(within(dialog).getByRole('button', { name: 'Back to the shop' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Back to the product' }));
     expect(screen.getByLabelText('Your credit limit')).toHaveTextContent('101 €');
   });
 
@@ -93,7 +93,7 @@ describe('shop prototype', () => {
     window.history.replaceState(null, '', '/');
     const user = userEvent.setup();
     render(<ShopApp />);
-    expect(screen.getByRole('heading', { name: 'Shop with your credit line' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'See what your credit line can buy' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Credit line at checkout' })).toBeInTheDocument();
     expect(screen.queryByRole('navigation', { name: 'Main' })).not.toBeInTheDocument();
 
@@ -133,7 +133,10 @@ describe('shop prototype', () => {
     const user = userEvent.setup();
     render(<ShopApp />);
     const nav = screen.getByRole('navigation', { name: 'Main' });
-    expect(within(nav).getByRole('button', { name: /Shop/ })).toHaveAttribute('aria-current', 'page');
+    expect(within(nav).getByRole('button', { name: /Find products/ })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
 
     await user.click(within(nav).getByRole('button', { name: 'Dashboard' }));
     expect(await screen.findByRole('button', { name: 'Make a withdrawal' })).toBeInTheDocument();
@@ -142,7 +145,7 @@ describe('shop prototype', () => {
     await user.click(within(nav).getByRole('button', { name: 'Invoices' }));
     expect(screen.getByText(/"Invoices" is not part of this concept/)).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Shop with your limit' }));
+    await user.click(screen.getByRole('button', { name: 'See what fits your limit' }));
     expect(screen.getByRole('searchbox')).toBeInTheDocument();
   });
 

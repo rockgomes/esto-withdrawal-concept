@@ -147,7 +147,7 @@ export default function ShopApp() {
   }, [notice]);
 
   const notBuilt = (name: string) =>
-    setNotice(`"${name}" is not part of this concept. Shop and Dashboard are.`);
+    setNotice(`"${name}" is not part of this concept. Find products and Dashboard are.`);
 
   if (phase === null) {
     return (
@@ -232,7 +232,7 @@ function ProtoTag({ phase, onPick }: { phase: Phase; onPick: (phase: Phase | nul
 
 const NAV: { label: string; icon: IconName; page?: Page; badge?: string; gapBefore?: boolean }[] = [
   { label: 'Dashboard', icon: 'grid', page: 'dashboard' },
-  { label: 'Shop', icon: 'bag', page: 'shop', badge: 'NEW' },
+  { label: 'Find products', icon: 'find', page: 'shop', badge: 'NEW' },
   { label: 'Credit line', icon: 'card' },
   { label: 'Invoices', icon: 'doc' },
   { label: 'Transactions', icon: 'swap' },
@@ -557,7 +557,7 @@ function Dashboard({
           Make a withdrawal
         </button>
         <button className="btn outline" onClick={onShop}>
-          Shop with your limit
+          See what fits your limit
         </button>
       </Balance>
       <DropList drops={drops} account={account} onOpen={onOpen} />
@@ -1116,11 +1116,11 @@ function About({
   );
 }
 
-type IconName = 'grid' | 'bag' | 'card' | 'doc' | 'swap' | 'file' | 'shield' | 'gem' | 'chat' | 'user';
+type IconName = 'grid' | 'find' | 'card' | 'doc' | 'swap' | 'file' | 'shield' | 'gem' | 'chat' | 'user';
 
 const ICON_PATHS: Record<IconName, string[]> = {
   grid: ['M4 4h6v6H4z', 'M14 4h6v6h-6z', 'M4 14h6v6H4z', 'M14 14h6v6h-6z'],
-  bag: ['M5 8h14l-1 12H6z', 'M9 8V6a3 3 0 0 1 6 0v2'],
+  find: ['M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14', 'm20 20-3.5-3.5'],
   card: ['M3 7h18v11H3z', 'M3 11h18', 'M7 15h3'],
   doc: ['M6 3h12v18H6z', 'M9 8h6', 'M9 12h6', 'M9 16h3'],
   swap: ['M4 8h14', 'm15 5 3 3-3 3', 'M20 16H6', 'm9 13-3 3 3 3'],

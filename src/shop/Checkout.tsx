@@ -219,7 +219,7 @@ export default function Checkout({
             <p className="demo-note">Simulated. No order is made, and no money moves.</p>
             <div className="btns">
               <button className="btn" onClick={onClose}>
-                Back to the shop
+                Back to the product
               </button>
             </div>
           </div>

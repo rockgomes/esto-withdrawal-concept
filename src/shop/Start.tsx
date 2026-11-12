@@ -36,13 +36,14 @@ export default function Start({
     <main className="start">
       <header className="start-head">
         <p className="start-by">A concept for ESTO by Rock Gomes, for the Product Builder test.</p>
-        <h1>Shop with your credit line</h1>
+        <h1>See what your credit line can buy</h1>
         <p className="start-lead">
           Today an ESTO customer with a credit line can do one thing with it: move money to a bank account.
         </p>
         <p className="start-lead">
-          This concept adds a Shop to the ESTO app. The customer finds real products from ESTO partner stores,
-          sees their own monthly price, and pays from the limit.
+          This concept adds a product search to the ESTO app. The customer finds real products from ESTO
+          partner stores and sees their own monthly price. Then they go to the store to buy. Nothing is sold
+          inside the ESTO app.
         </p>
       </header>
 

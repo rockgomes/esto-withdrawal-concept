@@ -17,18 +17,18 @@ export interface PhaseInfo {
 export const PHASES: PhaseInfo[] = [
   {
     id: 1,
-    name: 'Shop and price alerts',
-    flow: ['Search', 'Your monthly price', 'Price alert', 'Store page'],
+    name: 'Product search and price alerts',
+    flow: ['Search', 'Your monthly price', 'Price alert', 'Buy at the store'],
     customer:
-      'Real store prices, their own monthly price, and price alerts. They pay at the store, as today.',
-    esto: 'The Shop section in the app, and a daily job that reads the store feeds.',
+      'Real store prices, their own monthly price, and price alerts. They buy and pay at the store, as today.',
+    esto: 'A "Find products" section in the app, and a daily job that reads the store feeds.',
     stores: 'Nothing new. These feeds are already public.',
   },
   {
     id: 2,
     name: 'Credit line at checkout',
     flow: ['Store checkout', 'ESTO: Credit line', 'Paid'],
-    customer: 'They pay from the credit line at the store checkout. No application and no new contract.',
+    customer: 'At the store checkout, they pay from the credit line. No application and no new contract.',
     esto: '"Credit line" as a new method on its own checkout page.',
     stores:
       'Not confirmed. ESTO says its payment page shows every method enabled on the store account, so it may be nothing.',
