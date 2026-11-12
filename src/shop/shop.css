@@ -2182,9 +2182,30 @@ h2.page-title {
   color: inherit;
 }
 
-.how4 .tile.is-first {
-  border-color: var(--ink);
-  box-shadow: inset 0 0 0 1px var(--ink);
+button.tile:hover {
+  border-color: var(--muted);
+}
+
+.new-tag {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--green);
+  color: #0a0a0a;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  vertical-align: middle;
+}
+
+.tile-go {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .how4 .tile-pic {

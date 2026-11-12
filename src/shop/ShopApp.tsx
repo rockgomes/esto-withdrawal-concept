@@ -351,7 +351,6 @@ function Shop({
   const [watches, setWatches] = useState<Watch[]>(readWatches);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [simulated, setSimulated] = useState<string | null>(null);
-  const [howHidden, setHowHidden] = useState(false);
   const { productId, page, creditTab } = route;
   const go = (id: string | null) => navigate(id ? `#/p/${encodeURIComponent(id)}` : '#/');
 
@@ -396,8 +395,6 @@ function Shop({
             purchases={purchases}
             onTransactions={() => navigate('#/transactions')}
             phase={phase}
-            howHidden={howHidden}
-            onHideHow={() => setHowHidden(true)}
           />
         ) : page === 'transactions' ? (
           <Transactions purchases={purchases} phase={phase} />
@@ -592,8 +589,6 @@ function Dashboard({
   purchases,
   onTransactions,
   phase,
-  howHidden,
-  onHideHow,
 }: {
   account: Account;
   catalog: Catalog;
@@ -604,8 +599,6 @@ function Dashboard({
   purchases: Purchase[];
   onTransactions: () => void;
   phase: Phase;
-  howHidden: boolean;
-  onHideHow: () => void;
 }) {
   const picks = useMemo(
     () =>
@@ -628,7 +621,7 @@ function Dashboard({
           Shop with your limit
         </button>
       </Balance>
-      {purchases.length === 0 && !howHidden && <HowCard phase={phase} onShop={onShop} onHide={onHideHow} />}
+      {purchases.length === 0 && <HowCard phase={phase} onShop={onShop} />}
       {purchases.length > 0 && (
         <section className="panel" aria-labelledby="latest-title">
           <div className="panel-head">

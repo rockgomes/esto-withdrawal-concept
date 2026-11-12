@@ -178,17 +178,6 @@ describe('shop prototype', () => {
     expect(screen.getByRole('heading', { name: 'Personal finances' })).toBeInTheDocument();
   });
 
-  it('lets the person hide the explanation on the Dashboard', async () => {
-    const user = userEvent.setup();
-    render(<ShopApp />);
-    await user.click(
-      within(screen.getByRole('navigation', { name: 'Main' })).getByRole('button', { name: 'Dashboard' }),
-    );
-    await user.click(await screen.findByRole('button', { name: 'Hide' }));
-    expect(screen.queryByRole('heading', { name: 'How your credit line works' })).not.toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Fits your limit today' })).toBeInTheDocument();
-  });
-
   it('sends the person to the real store page in phase 1', async () => {
     const user = userEvent.setup();
     render(<ShopApp />);

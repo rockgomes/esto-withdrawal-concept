@@ -2,20 +2,17 @@ import type { Phase } from './phase';
 
 /**
  * "How your credit line works" on the Dashboard. It shows until the person
- * has paid at a store from the limit, or until they hide it. Three boxes
- * follow ESTO's own Credit Line page. The first box is the new thing.
+ * has paid at a store from the limit. Three boxes follow ESTO's own Credit
+ * Line page. The first box is the new thing, and the only one that opens a page.
  */
-export function HowCard({ phase, onShop, onHide }: { phase: Phase; onShop: () => void; onHide: () => void }) {
+export function HowCard({ phase, onShop }: { phase: Phase; onShop: () => void }) {
   return (
     <section className="panel how4" aria-labelledby="how4-title">
       <div className="panel-head">
         <h2 id="how4-title">How your credit line works</h2>
-        <button className="link" onClick={onHide}>
-          Hide
-        </button>
       </div>
       <div className="how4-row">
-        <button className="tile is-first" onClick={onShop}>
+        <button className="tile" onClick={onShop}>
           {phase === 2 ? (
             <>
               <span className="tile-pic pic-store" aria-hidden="true">
@@ -24,9 +21,10 @@ export function HowCard({ phase, onShop, onHide }: { phase: Phase; onShop: () =>
                 <span className="is-on">ESTO</span>
               </span>
               <span className="tile-title">
-                Pay at a store <span className="nav-badge">NEW</span>
+                Pay at a store <span className="new-tag">NEW</span>
               </span>
               <span className="tile-text">Choose ESTO at the checkout and pay from your limit.</span>
+              <span className="tile-go">Find products</span>
             </>
           ) : (
             <>
@@ -34,9 +32,10 @@ export function HowCard({ phase, onShop, onHide }: { phase: Phase; onShop: () =>
                 <span>Search a product</span>
               </span>
               <span className="tile-title">
-                See what your limit can buy <span className="nav-badge">NEW</span>
+                See what your limit can buy <span className="new-tag">NEW</span>
               </span>
               <span className="tile-text">Search real prices from ESTO partner stores.</span>
+              <span className="tile-go">Find products</span>
             </>
           )}
         </button>
