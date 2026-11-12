@@ -83,12 +83,13 @@ type Load =
   | { status: 'error'; message: string }
   | { status: 'ready'; catalog: Catalog; history: PriceHistory };
 
-type Page = 'dashboard' | 'shop' | 'transactions';
+type Page = 'dashboard' | 'shop' | 'transactions' | 'credit';
 
 const PAGE_HASH: Record<Page, string> = {
   dashboard: '#/dashboard',
   shop: '#/',
   transactions: '#/transactions',
+  credit: '#/credit-line',
 };
 
 interface Route {
@@ -101,7 +102,13 @@ function readRoute(): Route {
   const product = hash.match(/^#\/p\/(.+)$/);
   if (product) return { page: 'shop', productId: decodeURIComponent(product[1]) };
   const page: Page =
-    hash === '#/dashboard' ? 'dashboard' : hash === '#/transactions' ? 'transactions' : 'shop';
+    hash === '#/dashboard'
+      ? 'dashboard'
+      : hash === '#/transactions'
+        ? 'transactions'
+        : hash === '#/credit-line'
+          ? 'credit'
+          : 'shop';
   return { page, productId: null };
 }
 
@@ -160,7 +167,9 @@ export default function ShopApp() {
   }, [notice]);
 
   const notBuilt = (name: string) =>
-    setNotice(`"${name}" is not part of this concept. Dashboard, Find products, and Transactions are.`);
+    setNotice(
+      `"${name}" is not part of this concept. Dashboard, Find products, Credit Line, and Transactions are.`,
+    );
 
   if (phase === null) {
     return (
@@ -246,13 +255,13 @@ function ProtoTag({ phase, onPick }: { phase: Phase; onPick: (phase: Phase | nul
 const NAV: { label: string; icon: IconName; page?: Page; badge?: string; gapBefore?: boolean }[] = [
   { label: 'Dashboard', icon: 'grid', page: 'dashboard' },
   { label: 'Find products', icon: 'find', page: 'shop', badge: 'NEW' },
-  { label: 'Credit line', icon: 'card' },
+  { label: 'Credit Line', icon: 'card', page: 'credit' },
   { label: 'Invoices', icon: 'doc' },
   { label: 'Transactions', icon: 'swap', page: 'transactions' },
   { label: 'Agreements', icon: 'file' },
   { label: 'Insurance', icon: 'shield', gapBefore: true },
   { label: 'Premium', icon: 'gem' },
-  { label: 'Customer support', icon: 'chat', gapBefore: true },
+  { label: 'Support', icon: 'chat', gapBefore: true },
   { label: 'Profile', icon: 'user' },
 ];
 
@@ -380,10 +389,9 @@ function Shop({
             onTransactions={() => navigate('#/transactions')}
           />
         ) : page === 'transactions' ? (
-          <>
-            <Balance account={account} compact />
-            <Transactions purchases={purchases} onShop={() => go(null)} />
-          </>
+          <Transactions purchases={purchases} />
+        ) : page === 'credit' ? (
+          <CreditLine account={account} purchases={purchases} onOther={onOther} />
         ) : (
           <Balance account={account} compact />
         )}
@@ -579,11 +587,11 @@ function Dashboard({
   return (
     <>
       <Balance account={account}>
-        <button className="btn green" onClick={() => onOther('Higher limit')}>
-          Higher limit available
+        <button className="btn green" onClick={() => onOther('Higher balance')}>
+          Higher balance available
         </button>
-        <button className="btn" onClick={() => onOther('Withdrawal')}>
-          Make a withdrawal
+        <button className="btn" onClick={() => onOther('Withdraw money')}>
+          Withdraw money
         </button>
         <button className="btn outline" onClick={onShop}>
           Shop with your limit
@@ -1019,27 +1027,135 @@ function PurchaseRows({ purchases }: { purchases: Purchase[] }) {
   );
 }
 
-function Transactions({ purchases, onShop }: { purchases: Purchase[]; onShop: () => void }) {
+/** A number that looks like a payment reference. It is stable for one purchase. */
+function referenceOf(purchase: Purchase): string {
+  let n = 7;
+  for (const ch of purchase.date + purchase.product.id) n = (n * 31 + ch.charCodeAt(0)) % 100_000_000_000;
+  return String(n).padStart(11, '0');
+}
+
+function shortDate(iso: string): string {
+  return new Intl.DateTimeFormat('et-EE', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(
+    new Date(iso),
+  );
+}
+
+/**
+ * The Transactions page, with the columns of the real one. A store purchase
+ * from the credit line is a new type of row: ESTO pays the store.
+ */
+function Transactions({ purchases }: { purchases: Purchase[] }) {
   return (
-    <section className="panel" aria-labelledby="tx-title">
-      <h1 id="tx-title">Transactions</h1>
-      {purchases.length === 0 ? (
-        <>
-          <p className="muted">
-            Nothing here yet. A store purchase that you pay from your credit line shows on this page.
-          </p>
-          <button className="btn" onClick={onShop}>
-            Find a product
-          </button>
-        </>
-      ) : (
-        <PurchaseRows purchases={purchases} />
-      )}
+    <section aria-labelledby="tx-title">
+      <h1 id="tx-title" className="page-title">
+        Transactions
+      </h1>
+      <div className="table-wrap">
+        <table className="tx">
+          <thead>
+            <tr>
+              <th scope="col">Reference nr</th>
+              <th scope="col">Type</th>
+              <th scope="col">Payer</th>
+              <th scope="col">Receiver</th>
+              <th scope="col" className="num">
+                Amount
+              </th>
+              <th scope="col">Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {purchases.map((b) => (
+              <tr key={b.date + b.product.id}>
+                <td>{referenceOf(b)}</td>
+                <td>
+                  Purchase <span className="nav-badge">NEW</span>
+                </td>
+                <td>ESTO AS</td>
+                <td>
+                  {b.offer.store.name}
+                  <span className="muted small tx-name">{b.product.name}</span>
+                </td>
+                <td className="num">{money(b.offer.price)}</td>
+                <td>{shortDate(b.date)}</td>
+              </tr>
+            ))}
+            {purchases.length === 0 && (
+              <tr>
+                <td colSpan={6} className="muted">
+                  No purchase yet. When you pay at a store from your credit line, it shows here as a row of
+                  the type "Purchase".
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
       <p className="muted small tx-note">
-        Prototype: this page lists only the purchases you make in this demo. I have not seen the real
-        Transactions page, so its other content is not rebuilt here.
+        The columns are the ones of the real Transactions page. The real page lists your payments to ESTO.
+        They are left out here. "Purchase" is the new type of row in this concept.
       </p>
     </section>
+  );
+}
+
+/**
+ * The Credit Line page, as in the real app: the balance card, then Details.
+ * New in this concept: the purchases that make up the used credit.
+ */
+function CreditLine({
+  account,
+  purchases,
+  onOther,
+}: {
+  account: Account;
+  purchases: Purchase[];
+  onOther: (name: string) => void;
+}) {
+  return (
+    <>
+      <Balance account={account}>
+        <button className="btn green" onClick={() => onOther('Higher balance')}>
+          Higher balance available
+        </button>
+        <button className="btn" onClick={() => onOther('Withdraw money')}>
+          Withdraw money
+        </button>
+      </Balance>
+      <section aria-labelledby="details-title">
+        <h2 id="details-title" className="page-title">
+          Details
+        </h2>
+        <dl className="details">
+          <div>
+            <dt>Credit limit</dt>
+            <dd>{whole(account.limit)}</dd>
+          </div>
+          <div>
+            <dt>Credit used</dt>
+            <dd>{whole(account.used)}</dd>
+          </div>
+          <div>
+            <dt>Available</dt>
+            <dd>{whole(freeLimit(account))}</dd>
+          </div>
+        </dl>
+      </section>
+      <section aria-labelledby="bought-title">
+        <h2 id="bought-title" className="page-title">
+          Purchases from your credit line <span className="nav-badge">NEW</span>
+        </h2>
+        <div className="panel">
+          {purchases.length === 0 ? (
+            <p className="muted">
+              No purchase yet. A store purchase that you pay from the credit line shows here.
+            </p>
+          ) : (
+            <PurchaseRows purchases={purchases} />
+          )}
+        </div>
+      </section>
+    </>
   );
 }
 

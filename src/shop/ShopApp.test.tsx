@@ -84,6 +84,14 @@ describe('shop prototype', () => {
     expect(screen.getByLabelText('Your credit limit')).toHaveTextContent('101 €');
     await user.click(screen.getByRole('button', { name: 'All transactions' }));
     expect(screen.getByRole('heading', { name: 'Transactions' })).toBeInTheDocument();
+    const row = screen.getAllByRole('row')[1];
+    expect(row).toHaveTextContent('Purchase');
+    expect(row).toHaveTextContent('ESTO AS');
+    expect(row).toHaveTextContent('ONOFF');
+    expect(row).toHaveTextContent('1 079,00 €');
+
+    await user.click(screen.getByRole('button', { name: 'Credit Line' }));
+    expect(screen.getByText('Credit used').parentElement).toHaveTextContent('1 399 €');
     expect(screen.getByText(/Your next monthly payment went up by/)).toBeInTheDocument();
   });
 
@@ -171,7 +179,7 @@ describe('shop prototype', () => {
     );
 
     await user.click(within(nav).getByRole('button', { name: 'Dashboard' }));
-    expect(await screen.findByRole('button', { name: 'Make a withdrawal' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Withdraw money' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Fits your limit today' })).toBeInTheDocument();
 
     await user.click(within(nav).getByRole('button', { name: 'Invoices' }));
