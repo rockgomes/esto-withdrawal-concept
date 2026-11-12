@@ -100,7 +100,7 @@ export default function Start({
         <p className="ruler-now" aria-live="polite">
           {active ? (
             <>
-              <strong>{active.name}.</strong> {money(lowestPrice(active))} at {active.offers[0].store.name},{' '}
+              <strong>{active.name}.</strong> {money(lowestPrice(active))} at {active.offers[0].store.name}.{' '}
               {active.offers.length} stores sell it. {money(plan(lowestPrice(active), account).monthly)} a
               month for this customer over 12 months.{' '}
               {lowestPrice(active) <= free ? 'It fits the limit.' : 'It is above the free limit.'}
@@ -113,7 +113,7 @@ export default function Start({
         </p>
         <p className="ruler-note">
           {catalog
-            ? `Real products and prices, from the open feeds of ${catalog.stores.length} ESTO partner stores. ${catalog.products.length.toLocaleString('en-GB')} products, read once a day. `
+            ? `These are real products and prices from the open feeds of ${catalog.stores.length} ESTO partner stores. A job reads all ${catalog.products.length.toLocaleString('en-GB')} products once a day. `
             : ''}
           The customer is an example: a {whole(account.limit)} limit with {whole(account.used)} in use. Choose
           a product to open it in the prototype.
@@ -123,8 +123,7 @@ export default function Start({
       <section className="phases" aria-labelledby="phases-title">
         <h2 id="phases-title">It ships in two phases</h2>
         <p className="phases-today">
-          A withdrawal takes 1 to 3 days, or it costs 19,90 € to get the money at once. Each phase takes away
-          a part of that.
+          A withdrawal takes 1 to 3 days, or it costs 19,90 € to get the money at once.
         </p>
 
         <article className="phase" aria-labelledby="phase-1">
@@ -169,8 +168,7 @@ export default function Start({
               <li className="is-pay">Pay from the limit</li>
             </ol>
             <p className="muted small">
-              The customer already has a credit line contract. So there is nothing to apply for and nothing
-              new to sign.
+              The customer signed a credit line contract before. This purchase uses that contract.
             </p>
           </div>
         </article>
