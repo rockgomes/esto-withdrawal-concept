@@ -7,8 +7,9 @@ import { freeLimit, minimumPayment, plan, type Account } from './credit';
 const money = (cents: Cents) => formatMoney(cents, 'et');
 const whole = (cents: Cents) => formatWhole(cents, 'et');
 
-type Step = 'store' | 'esto' | 'done';
+type Step = 'store' | 'esto' | 'confirmed';
 type Method = 'credit-line' | 'hire-purchase' | 'esto-3' | 'pay-later';
+type StorePay = 'bank' | 'card' | 'esto';
 
 /** ESTO's checkout methods today, plus the new one. */
 const METHODS: { id: Method; name: string; isNew?: boolean }[] = [
@@ -18,10 +19,30 @@ const METHODS: { id: Method; name: string; isNew?: boolean }[] = [
   { id: 'pay-later', name: 'Pay Later' },
 ];
 
+const STORE_PAY: { id: StorePay; name: string; note: string }[] = [
+  { id: 'bank', name: 'Bank link', note: 'Pay from your bank' },
+  { id: 'card', name: 'Card', note: 'Visa or Mastercard' },
+  { id: 'esto', name: 'ESTO', note: 'Pay in parts' },
+];
+
+function hostOf(url: string, fallback: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return fallback;
+  }
+}
+
 /**
- * Phase 2: the purchase, from the store checkout to ESTO's checkout page and
- * back. The store page is a stand-in. The ESTO page is the part ESTO builds:
- * its checkout as it is today, with "Credit line" added as a method.
+ * Phase 2: the purchase, as three full pages in three places.
+ *
+ * 1. The store's checkout. A stand-in: the real page belongs to the store.
+ * 2. ESTO's payment page, where the store sends the customer today. The new
+ *    part is one more method on it: "Credit line".
+ * 3. The store again, with the order confirmed.
+ *
+ * The bar at the top works like a browser address bar. It says which site
+ * the customer is on.
  */
 export default function Checkout({
   product,
@@ -39,192 +60,231 @@ export default function Checkout({
   onPaid: () => void;
 }) {
   const [step, setStep] = useState<Step>('store');
+  const [storePay, setStorePay] = useState<StorePay>('esto');
   const [method, setMethod] = useState<Method>('credit-line');
-  const box = useRef<HTMLDivElement>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
   const p = plan(offer.price, account, months);
   // Fixed when the flow opens, so the numbers do not move after the payment.
   const [freeBefore] = useState(() => freeLimit(account));
   const freeAfter = freeBefore - offer.price;
   const store = offer.store.name;
+  const storeHost = hostOf(offer.store.site || offer.url, store);
+  const onStore = step !== 'esto';
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    const before = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = before;
+    };
   }, [onClose]);
 
-  useEffect(() => box.current?.focus(), [step]);
+  useEffect(() => heading.current?.focus(), [step]);
 
   const pay = () => {
     onPaid();
-    setStep('done');
+    setStep('confirmed');
   };
 
-  return (
-    <div className="modal" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div
-        className={`sheet checkout is-${step}`}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="checkout-title"
-        tabIndex={-1}
-        ref={box}
-      >
-        <ol className="steps" aria-label="Steps">
-          {(['store', 'esto', 'done'] as const).map((s, i) => (
-            <li key={s} aria-current={s === step ? 'step' : undefined}>
-              <span className="step-n">{i + 1}</span>
-              {s === 'store' ? store : s === 'esto' ? 'ESTO' : 'Done'}
-            </li>
-          ))}
-        </ol>
+  const order = (
+    <div className="st-order">
+      {product.image && (
+        <img src={product.image} alt="" referrerPolicy="no-referrer" loading="lazy" decoding="async" />
+      )}
+      <p className="st-order-name">{product.name}</p>
+      <p className="st-order-price">{money(offer.price)}</p>
+    </div>
+  );
 
-        {step === 'store' && (
-          <>
-            <p className="demo-note">
-              Stand-in for the {store} checkout. The real page belongs to the store.
-            </p>
-            <h2 id="checkout-title">{store} checkout</h2>
-            <dl className="lines">
-              <div>
-                <dt>{product.name}</dt>
+  return (
+    <div
+      className={`flow-page ${onStore ? 'is-store' : 'is-esto'}`}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="flow-title"
+    >
+      <div className="addr">
+        <p className="addr-url">
+          <LockIcon />
+          <span>{onStore ? storeHost : 'esto.ee'}</span>
+        </p>
+        <p className="addr-what">
+          Step {step === 'store' ? 1 : step === 'esto' ? 2 : 3} of 3.{' '}
+          {onStore
+            ? `You are on the ${store} site. This page is a stand-in.`
+            : "You are on ESTO's payment page. The new part is the Credit line option."}
+        </p>
+        <button className="addr-close" onClick={onClose}>
+          Leave the demo
+        </button>
+      </div>
+
+      {step === 'store' && (
+        <div className="st">
+          <header className="st-head">
+            <span className="st-logo">{store}</span>
+            <span>Checkout</span>
+          </header>
+          <div className="st-body">
+            <section>
+              <h1 id="flow-title" ref={heading} tabIndex={-1}>
+                Your order
+              </h1>
+              {order}
+              <dl className="st-total">
+                <dt>Total</dt>
                 <dd>{money(offer.price)}</dd>
+              </dl>
+            </section>
+            <section>
+              <h2>Payment method</h2>
+              <div className="st-pay" role="radiogroup" aria-label="Payment method">
+                {STORE_PAY.map((m) => (
+                  <label key={m.id} className={storePay === m.id ? 'is-on' : undefined}>
+                    <input
+                      type="radio"
+                      name="store-pay"
+                      checked={storePay === m.id}
+                      onChange={() => setStorePay(m.id)}
+                    />
+                    <span>
+                      <strong>{m.name}</strong>
+                      <small>{m.note}</small>
+                    </span>
+                  </label>
+                ))}
               </div>
-            </dl>
-            <h3>Payment method</h3>
-            <ul className="pay-list">
-              <li>Bank link</li>
-              <li>Card</li>
-              <li className="is-picked">
-                <span>
-                  <strong>ESTO</strong>
-                  <span className="muted small">Pay in parts</span>
-                </span>
-                <span className="badge ok">Selected</span>
-              </li>
-            </ul>
-            <div className="btns">
-              <button className="btn" onClick={() => setStep('esto')}>
+              <button className="st-btn" disabled={storePay !== 'esto'} onClick={() => setStep('esto')}>
                 Continue to ESTO
               </button>
-              <button className="btn ghost" onClick={onClose}>
-                Cancel
-              </button>
-            </div>
-          </>
-        )}
-
-        {step === 'esto' && (
-          <>
-            <div className="esto-head">
-              <span className="wordmark">esto</span>
-              <span className="muted small">Order from {store}</span>
-            </div>
-            <h2 id="checkout-title" className="visually-hidden">
-              ESTO checkout
-            </h2>
-            <div className="methods" role="radiogroup" aria-label="How do you want to pay?">
-              {METHODS.map((m) => (
-                <button
-                  key={m.id}
-                  role="radio"
-                  aria-checked={m.id === method}
-                  className="method"
-                  onClick={() => setMethod(m.id)}
-                >
-                  {m.name}
-                  {m.isNew && <span className="nav-badge">NEW</span>}
-                </button>
-              ))}
-            </div>
-
-            {method === 'credit-line' ? (
-              <div className="esto-card">
-                <p className="esto-price">{money(offer.price)}</p>
-                <p className="muted small">{product.name}</p>
-                <dl className="lines">
-                  <div>
-                    <dt>Free limit now</dt>
-                    <dd>{whole(freeBefore)}</dd>
-                  </div>
-                  <div>
-                    <dt>Free limit after</dt>
-                    <dd>{whole(freeAfter)}</dd>
-                  </div>
-                  <div>
-                    <dt>Lowest payment each month</dt>
-                    <dd>{money(minimumPayment(offer.price, account.rate))}</dd>
-                  </div>
-                  <div>
-                    <dt>Your plan</dt>
-                    <dd>
-                      {months} × {money(p.monthly)}
-                    </dd>
-                  </div>
-                </dl>
-                <p className="esto-ok">
-                  No application and no new contract. You already have a credit line contract.
-                </p>
-                <button className="btn buy" onClick={pay}>
-                  Pay {money(offer.price)} from my credit line
-                </button>
-                <p className="muted small steps-note">
-                  Today an ESTO purchase has 4 steps: choose, apply, sign, and done. This one has 2: choose
-                  and pay.
-                </p>
-              </div>
-            ) : (
-              <div className="esto-card">
-                <p className="esto-price">{money(offer.price)}</p>
-                <p className="muted">
-                  {METHODS.find((m) => m.id === method)?.name} works as it does today: an application, then a
-                  new contract to sign. It is not part of this concept.
-                </p>
-                <button className="btn buy" onClick={() => setMethod('credit-line')}>
-                  Use my credit line
-                </button>
-              </div>
-            )}
-            <button className="link" onClick={() => setStep('store')}>
-              Back to {store}
-            </button>
-          </>
-        )}
-
-        {step === 'done' && (
-          <div className="center">
-            <div className="tick" aria-hidden="true">
-              ✓
-            </div>
-            <h2 id="checkout-title">Paid from your credit line</h2>
-            <p className="muted">
-              ESTO pays {store}. {store} sends your order as usual.
-            </p>
-            <dl className="lines">
-              <div>
-                <dt>Paid</dt>
-                <dd>{money(offer.price)}</dd>
-              </div>
-              <div>
-                <dt>Free limit now</dt>
-                <dd>{whole(freeAfter)}</dd>
-              </div>
-              <div>
-                <dt>Your plan</dt>
-                <dd>
-                  {months} × {money(p.monthly)}
-                </dd>
-              </div>
-            </dl>
-            <p className="demo-note">Simulated. No order is made, and no money moves.</p>
-            <div className="btns">
-              <button className="btn" onClick={onClose}>
-                Back to the product
-              </button>
-            </div>
+              <p className="st-note">
+                {storePay === 'esto'
+                  ? `${store} sends you to ESTO's payment page. This is how it works today.`
+                  : 'This demo only follows the ESTO path. Choose ESTO to go on.'}
+              </p>
+            </section>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {step === 'esto' && (
+        <div className="ep">
+          <div className="esto-head">
+            <span className="wordmark">esto</span>
+            <span className="muted small">Order from {store}</span>
+          </div>
+          <h1 id="flow-title" ref={heading} tabIndex={-1} className="ep-title">
+            How do you want to pay?
+          </h1>
+          <div className="methods" role="radiogroup" aria-label="How do you want to pay?">
+            {METHODS.map((m) => (
+              <button
+                key={m.id}
+                role="radio"
+                aria-checked={m.id === method}
+                className="method"
+                onClick={() => setMethod(m.id)}
+              >
+                {m.name}
+                {m.isNew && <span className="nav-badge">NEW</span>}
+              </button>
+            ))}
+          </div>
+
+          {method === 'credit-line' ? (
+            <div className="esto-card">
+              <p className="esto-price">{money(offer.price)}</p>
+              <p className="muted small">{product.name}</p>
+              <dl className="lines">
+                <div>
+                  <dt>Free limit now</dt>
+                  <dd>{whole(freeBefore)}</dd>
+                </div>
+                <div>
+                  <dt>Free limit after</dt>
+                  <dd>{whole(freeAfter)}</dd>
+                </div>
+                <div>
+                  <dt>Lowest payment each month</dt>
+                  <dd>{money(minimumPayment(offer.price, account.rate))}</dd>
+                </div>
+                <div>
+                  <dt>Your plan</dt>
+                  <dd>
+                    {months} × {money(p.monthly)}
+                  </dd>
+                </div>
+              </dl>
+              <p className="esto-ok">
+                No application and no new contract. You signed a credit line contract before.
+              </p>
+              <button className="btn buy" onClick={pay}>
+                Pay {money(offer.price)} from my credit line
+              </button>
+            </div>
+          ) : (
+            <div className="esto-card">
+              <p className="esto-price">{money(offer.price)}</p>
+              <p className="muted">
+                {METHODS.find((m) => m.id === method)?.name} works as it does today: an application, then a
+                new contract to sign. This demo does not follow it.
+              </p>
+              <button className="btn buy" onClick={() => setMethod('credit-line')}>
+                Use my credit line
+              </button>
+            </div>
+          )}
+          <button className="link" onClick={() => setStep('store')}>
+            Back to {store}
+          </button>
+        </div>
+      )}
+
+      {step === 'confirmed' && (
+        <div className="st">
+          <header className="st-head">
+            <span className="st-logo">{store}</span>
+            <span>Order</span>
+          </header>
+          <div className="st-body is-one">
+            <section>
+              <p className="st-tick" aria-hidden="true">
+                ✓
+              </p>
+              <h1 id="flow-title" ref={heading} tabIndex={-1}>
+                Order confirmed
+              </h1>
+              <p>
+                ESTO paid {store} for this order. {store} sends it as usual.
+              </p>
+              {order}
+              <dl className="st-total">
+                <dt>Paid with ESTO</dt>
+                <dd>{money(offer.price)}</dd>
+              </dl>
+              <p className="st-note">
+                Simulated. No order is made, and no money moves. In the ESTO app, the free limit is now{' '}
+                {whole(freeAfter)}.
+              </p>
+              <button className="st-btn" onClick={onClose}>
+                Open the ESTO app
+              </button>
+            </section>
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" className="icon">
+      <path d="M6 11h12v9H6z" />
+      <path d="M9 11V8a3 3 0 0 1 6 0v3" />
+    </svg>
   );
 }

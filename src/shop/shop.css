@@ -1532,86 +1532,244 @@ input[type='range'] {
   color: var(--ink);
 }
 
-/* ─── Checkout (phase 2) ────────────────────────────────────────────── */
+/* ─── Phase 2 purchase: three full pages ────────────────────────────── */
 
-.steps {
-  display: flex;
-  gap: 6px;
-  margin: 0 0 16px;
-  padding: 0;
-  list-style: none;
-  font-size: 12px;
-  color: var(--muted);
+.flow-page {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  overflow: auto;
+  animation: fade 0.2s both;
 }
 
-.steps li {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex: 1;
-  min-width: 0;
-  padding-bottom: 8px;
-  border-bottom: 2px solid var(--line);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.flow-page.is-store {
+  background: #ffffff;
+  color: #1a1a1a;
 }
 
-.steps li[aria-current='step'] {
-  color: var(--ink);
-  font-weight: 600;
-  border-color: var(--ink);
-}
-
-.step-n {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--card-2);
-  font-size: 11px;
-}
-
-.checkout.is-esto {
+.flow-page.is-esto {
   background: var(--bg);
 }
 
-.checkout h3 {
-  margin-top: 18px;
+/* Works like a browser address bar: it says which site this is. */
+.addr {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 10px 16px;
+  background: #e9eaec;
+  color: #1a1a1a;
+  border-bottom: 1px solid #cfd1d4;
+  font-size: 13px;
 }
 
-.checkout .demo-note {
-  margin-top: 0;
+.addr p {
+  margin: 0;
 }
 
-.pay-list {
-  margin: 8px 0 18px;
-  padding: 0;
-  list-style: none;
-}
-
-.pay-list li {
+.addr-url {
   display: flex;
   align-items: center;
+  gap: 8px;
+  min-width: 180px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: #ffffff;
+  font-weight: 600;
+}
+
+.addr-what {
+  flex: 1 1 240px;
+}
+
+.addr-close {
+  padding: 7px 14px;
+  border: 1px solid #9a9da2;
+  border-radius: 999px;
+  background: none;
+  color: inherit;
+  font-weight: 600;
+}
+
+/* The store pages. Plain on purpose, and not ESTO's look. */
+.st {
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+  font-size: 15px;
+}
+
+.st-head {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 18px max(20px, calc((100vw - 980px) / 2));
+  border-bottom: 3px solid #1d4ed8;
+  color: #4b5563;
+}
+
+.st-logo {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #1a1a1a;
+}
+
+.st-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 32px 56px;
+  max-width: 1020px;
+  margin: 0 auto;
+  padding: 32px 20px 56px;
+}
+
+.st-body.is-one {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 560px;
+}
+
+.st h1,
+.st h2 {
+  margin: 0 0 16px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.st h1:focus {
+  outline: none;
+}
+
+.st-order {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 0;
+  border-top: 1px solid #d9dce1;
+  border-bottom: 1px solid #d9dce1;
+}
+
+.st-order img {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+}
+
+.st-order p {
+  margin: 0;
+}
+
+.st-order-name {
+  grid-column: 2;
+}
+
+.st-order-price {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.st-total {
+  display: flex;
   justify-content: space-between;
+  margin: 14px 0 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.st-total dd {
+  margin: 0;
+}
+
+.st-pay label {
+  display: flex;
+  align-items: center;
   gap: 12px;
-  padding: 12px 14px;
-  margin: 0 0 6px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  color: var(--muted);
+  padding: 14px;
+  margin-bottom: 8px;
+  border: 1px solid #c3c7ce;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
-.pay-list li.is-picked {
-  color: var(--ink);
-  border-color: var(--ink);
-  box-shadow: inset 0 0 0 1px var(--ink);
+.st-pay label.is-on {
+  border-color: #1d4ed8;
+  box-shadow: inset 0 0 0 1px #1d4ed8;
 }
 
-.pay-list li span span {
+.st-pay input {
+  width: 18px;
+  height: 18px;
+  accent-color: #1d4ed8;
+}
+
+.st-pay small {
   display: block;
+  color: #4b5563;
+  font-size: 13px;
+}
+
+.st-btn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 14px 20px;
+  border: 0;
+  border-radius: 4px;
+  background: #1d4ed8;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.st-btn:disabled {
+  background: #9aa3b5;
+  opacity: 1;
+}
+
+.st-note {
+  margin: 12px 0 0;
+  color: #4b5563;
+  font-size: 13px;
+}
+
+.st-tick {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin: 0 0 12px;
+  border-radius: 50%;
+  background: #15803d;
+  color: #ffffff;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.flow-page.is-store :focus-visible {
+  outline-color: #1d4ed8;
+}
+
+/* ESTO's payment page. */
+.ep {
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 28px 16px 56px;
+}
+
+.ep-title {
+  margin: 0 0 14px;
+  font-size: 20px;
+}
+
+.ep-title:focus {
+  outline: none;
 }
 
 .esto-head {

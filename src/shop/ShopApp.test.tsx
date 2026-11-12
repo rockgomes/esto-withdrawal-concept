@@ -54,8 +54,12 @@ describe('shop prototype', () => {
 
     await user.click(screen.getByRole('button', { name: 'Buy at ONOFF with your credit line' }));
     const dialog = screen.getByRole('dialog');
-    expect(dialog).toHaveTextContent('Stand-in for the ONOFF checkout');
+    expect(dialog).toHaveTextContent('You are on the ONOFF site. This page is a stand-in.');
+    await user.click(within(dialog).getByRole('radio', { name: /Card/ }));
+    expect(within(dialog).getByRole('button', { name: 'Continue to ESTO' })).toBeDisabled();
+    await user.click(within(dialog).getByRole('radio', { name: /ESTO/ }));
     await user.click(within(dialog).getByRole('button', { name: 'Continue to ESTO' }));
+    expect(dialog).toHaveTextContent("You are on ESTO's payment page");
 
     expect(within(dialog).getByRole('radio', { name: /Credit line/ })).toHaveAttribute(
       'aria-checked',
@@ -69,9 +73,10 @@ describe('shop prototype', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Use my credit line' }));
 
     await user.click(within(dialog).getByRole('button', { name: /from my credit line/ }));
-    expect(within(dialog).getByRole('heading', { name: 'Paid from your credit line' })).toBeInTheDocument();
+    expect(within(dialog).getByRole('heading', { name: 'Order confirmed' })).toBeInTheDocument();
+    expect(dialog).toHaveTextContent('You are on the ONOFF site');
     expect(dialog).toHaveTextContent('No order is made');
-    await user.click(within(dialog).getByRole('button', { name: 'Back to the product' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Open the ESTO app' }));
     expect(screen.getByLabelText('Your credit limit')).toHaveTextContent('101 €');
   });
 
