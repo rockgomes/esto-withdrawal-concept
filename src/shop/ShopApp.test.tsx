@@ -122,19 +122,21 @@ describe('shop prototype', () => {
     await user.click(await screen.findByRole('button', { name: /Apple iPhone 17 256GB/ }));
     expect(screen.getByText(/The lowest payment for this purchase starts at/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'How a credit line works' }));
-    expect(screen.getByRole('tab', { name: 'Information' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'How it works' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('heading', { name: 'How it works' })).toBeInTheDocument();
   });
 
-  it('explains the credit line on an Information tab, with the tiles of the real page and one new tile', async () => {
+  it('has three tabs on the Credit Line page: My credit line, How it works, and FAQ', async () => {
     const user = userEvent.setup();
     render(<ShopApp />);
     await user.click(await screen.findByRole('button', { name: 'Credit Line' }));
     expect(screen.getByRole('tab', { name: 'My credit line' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByText('Credit used')).toBeInTheDocument();
+    // The balance card has the same way to the products as on the Dashboard.
+    expect(screen.getByRole('button', { name: 'Shop with your limit' })).toBeInTheDocument();
 
-    await user.click(screen.getByRole('tab', { name: 'Information' }));
-    expect(window.location.hash).toBe('#/credit-line?tab=information');
+    await user.click(screen.getByRole('tab', { name: 'How it works' }));
+    expect(window.location.hash).toBe('#/credit-line?tab=how-it-works');
     for (const title of [
       'Apply and sign for free',
       'Pay only for what you use',
@@ -145,8 +147,18 @@ describe('shop prototype', () => {
     }
     expect(screen.getByRole('heading', { name: /Pay at a store from your limit/ })).toBeInTheDocument();
     expect(screen.queryByText('Credit used')).not.toBeInTheDocument();
+    // The thorough part: the facts, and one example in numbers.
+    expect(screen.getByText('From 19% a year')).toBeInTheDocument();
+    const row = screen.getByRole('row', { name: /Month 1 / });
+    expect(row).toHaveTextContent('8,33 €');
+    expect(row).toHaveTextContent('39,25 €');
 
-    await user.click(screen.getByRole('button', { name: 'Find a product' }));
+    await user.click(screen.getByRole('tab', { name: 'FAQ' }));
+    expect(window.location.hash).toBe('#/credit-line?tab=faq');
+    expect(screen.getByText('Can I repay everything early?')).toBeInTheDocument();
+    expect(screen.getByText(/Can I pay at a store from my credit line\?/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Shop with your limit' }));
     expect(await screen.findByRole('searchbox')).toBeInTheDocument();
   });
 
@@ -194,9 +206,11 @@ describe('shop prototype', () => {
     const nav = screen.getByRole('navigation', { name: 'Main' });
     await user.click(within(nav).getByRole('button', { name: 'Credit Line' }));
     expect(screen.queryByText(/Purchases from your credit line/)).not.toBeInTheDocument();
-    await user.click(screen.getByRole('tab', { name: 'Information' }));
+    await user.click(screen.getByRole('tab', { name: 'How it works' }));
     expect(screen.getByRole('heading', { name: 'Payments replenish balance' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: /Pay at a store from your limit/ })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('tab', { name: 'FAQ' }));
+    expect(screen.queryByText(/Can I pay at a store from my credit line/)).not.toBeInTheDocument();
     await user.click(within(nav).getByRole('button', { name: /Find products/ }));
     await user.click(screen.getByRole('button', { name: /Apple iPhone 17 256GB/ }));
     // One link to the store, not two.

@@ -63,3 +63,17 @@ export function plan(price: Cents, account: Account, months: number = DEFAULT_MO
 export function minimumPayment(amount: Cents, rate: number): Cents {
   return Math.round(amount / 120 + (amount * rate) / 100 / 12);
 }
+
+/** How many months the lowest payments take: 1/120 of the amount is paid back each month. */
+export const MINIMUM_MONTHS = 120;
+
+/**
+ * The two parts of the lowest payment in one month, by ESTO's rule: a fixed
+ * part of the amount used, plus interest on what is still owed.
+ */
+export function lowestPaymentParts(amount: Cents, rate: number, month: number) {
+  const fixed = amount / MINIMUM_MONTHS;
+  const stillOwed = (amount * (MINIMUM_MONTHS - month + 1)) / MINIMUM_MONTHS;
+  const interest = (stillOwed * rate) / 100 / 12;
+  return { fixed: Math.round(fixed), interest: Math.round(interest), total: Math.round(fixed + interest) };
+}

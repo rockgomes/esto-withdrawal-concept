@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEMO_ACCOUNT, fits, freeLimit, isHighUse, minimumPayment, plan } from './credit';
+import { DEMO_ACCOUNT, fits, freeLimit, isHighUse, lowestPaymentParts, minimumPayment, plan } from './credit';
 
 describe('credit', () => {
   it('knows the free limit and what fits it', () => {
@@ -12,6 +12,13 @@ describe('credit', () => {
   it('marks the limit as high in use from 80%', () => {
     expect(isHighUse({ ...DEMO_ACCOUNT, limit: 150_000, used: 119_999 })).toBe(false);
     expect(isHighUse({ ...DEMO_ACCOUNT, limit: 150_000, used: 120_000 })).toBe(true);
+  });
+
+  it('splits the lowest payment in a fixed part and interest on what is still owed', () => {
+    // 1 200 EUR at 12%: 10 EUR a month pays back, and the interest is 1% of what is still owed.
+    expect(lowestPaymentParts(120_000, 12, 1)).toEqual({ fixed: 1_000, interest: 1_200, total: 2_200 });
+    expect(lowestPaymentParts(120_000, 12, 120)).toEqual({ fixed: 1_000, interest: 10, total: 1_010 });
+    expect(lowestPaymentParts(120_000, 12, 1).total).toBe(minimumPayment(120_000, 12));
   });
 
   it('makes a plan whose parts add up', () => {

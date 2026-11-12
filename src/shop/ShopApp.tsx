@@ -25,7 +25,7 @@ import {
   type Account,
 } from './credit';
 import Checkout from './Checkout';
-import CreditInfo from './CreditInfo';
+import { CreditFaq, CreditHow } from './CreditInfo';
 import { EstoBlocks, HowCard } from './DashboardBlocks';
 import LimitImpact from './LimitImpact';
 import { PHASES, readPhase, writePhase, type Phase } from './phase';
@@ -96,18 +96,27 @@ const PAGE_HASH: Record<Page, string> = {
   credit: '#/credit-line',
 };
 
+type CreditTab = 'mine' | 'how' | 'faq';
+
+const CREDIT_TAB_HASH: Record<CreditTab, string> = {
+  mine: '#/credit-line',
+  how: '#/credit-line?tab=how-it-works',
+  faq: '#/credit-line?tab=faq',
+};
+
 interface Route {
   page: Page;
   productId: string | null;
   /** The Credit Line page has two tabs, as in the real app. */
-  creditTab: 'mine' | 'info';
+  creditTab: CreditTab;
 }
 
 function readRoute(): Route {
   const hash = window.location.hash;
   const product = hash.match(/^#\/p\/(.+)$/);
   if (product) return { page: 'shop', productId: decodeURIComponent(product[1]), creditTab: 'mine' };
-  const creditTab = hash === '#/credit-line?tab=information' ? 'info' : 'mine';
+  const creditTab: CreditTab =
+    hash === CREDIT_TAB_HASH.how ? 'how' : hash === CREDIT_TAB_HASH.faq ? 'faq' : 'mine';
   const page: Page =
     hash === '#/dashboard'
       ? 'dashboard'
@@ -404,7 +413,7 @@ function Shop({
             purchases={purchases}
             tab={creditTab}
             phase={phase}
-            onTab={(tab) => navigate(tab === 'info' ? '#/credit-line?tab=information' : '#/credit-line')}
+            onTab={(tab) => navigate(CREDIT_TAB_HASH[tab])}
             onOther={onOther}
             onShop={() => go(null)}
           />
@@ -431,7 +440,7 @@ function Shop({
             onBack={() => go(null)}
             onBought={onBought}
             onSeePurchase={() => navigate('#/dashboard')}
-            onHowItWorks={() => navigate('#/credit-line?tab=information')}
+            onHowItWorks={() => navigate(CREDIT_TAB_HASH.how)}
             phase={phase}
           />
         )}
@@ -1152,8 +1161,8 @@ function CreditLine({
 }: {
   account: Account;
   purchases: Purchase[];
-  tab: 'mine' | 'info';
-  onTab: (tab: 'mine' | 'info') => void;
+  tab: CreditTab;
+  onTab: (tab: CreditTab) => void;
   onOther: (name: string) => void;
   onShop: () => void;
   phase: Phase;
@@ -1167,17 +1176,25 @@ function CreditLine({
         <button className="btn" onClick={() => onOther('Withdraw money')}>
           Withdraw money
         </button>
+        <button className="btn outline" onClick={onShop}>
+          Shop with your limit
+        </button>
       </Balance>
       <div className="tabs" role="tablist" aria-label="Credit line">
         <button role="tab" aria-selected={tab === 'mine'} onClick={() => onTab('mine')}>
           My credit line
         </button>
-        <button role="tab" aria-selected={tab === 'info'} onClick={() => onTab('info')}>
-          Information
+        <button role="tab" aria-selected={tab === 'how'} onClick={() => onTab('how')}>
+          How it works
+        </button>
+        <button role="tab" aria-selected={tab === 'faq'} onClick={() => onTab('faq')}>
+          FAQ
         </button>
       </div>
-      {tab === 'info' ? (
-        <CreditInfo onShop={onShop} phase={phase} />
+      {tab === 'how' ? (
+        <CreditHow account={account} phase={phase} onShop={onShop} />
+      ) : tab === 'faq' ? (
+        <CreditFaq phase={phase} />
       ) : (
         <>
           <section aria-labelledby="details-title">
