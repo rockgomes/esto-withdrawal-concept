@@ -437,6 +437,15 @@ a {
   flex: none;
 }
 
+.balance .dot {
+  display: inline-block;
+  margin-right: 4px;
+}
+
+.esto-card .impact {
+  margin: 14px 0 4px;
+}
+
 .impact {
   margin-top: 16px;
   padding: 12px 14px;

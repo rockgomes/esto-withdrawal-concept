@@ -3,6 +3,7 @@ import { formatMoney, formatWhole } from '../lib/format';
 import type { Cents } from '../lib/money';
 import type { Offer, Product } from './catalog';
 import { freeLimit, minimumPayment, plan, type Account } from './credit';
+import LimitImpact from './LimitImpact';
 
 const money = (cents: Cents) => formatMoney(cents, 'et');
 const whole = (cents: Cents) => formatWhole(cents, 'et');
@@ -71,7 +72,6 @@ export default function Checkout({
   const [method, setMethod] = useState<Method>(enough ? 'credit-line' : 'hire-purchase');
   const heading = useRef<HTMLHeadingElement>(null);
   const p = plan(offer.price, account, months);
-  const freeAfter = freeBefore - offer.price;
   const store = offer.store.name;
   const storeHost = hostOf(offer.store.site || offer.url, store);
   const onStore = step === 'store' || step === 'confirmed';
@@ -253,15 +253,8 @@ export default function Checkout({
             <div className="esto-card">
               <p className="esto-price">{money(offer.price)}</p>
               <p className="muted small">{product.name}</p>
+              <LimitImpact account={{ ...account, used: account.limit - freeBefore }} price={offer.price} />
               <dl className="lines">
-                <div>
-                  <dt>Free limit now</dt>
-                  <dd>{whole(freeBefore)}</dd>
-                </div>
-                <div>
-                  <dt>Free limit after</dt>
-                  <dd>{whole(freeAfter)}</dd>
-                </div>
                 <div>
                   <dt>Your next monthly payment goes up by</dt>
                   <dd>{money(minimumPayment(offer.price, account.rate))}</dd>

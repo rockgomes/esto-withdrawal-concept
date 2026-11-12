@@ -23,6 +23,7 @@ import {
   type Account,
 } from './credit';
 import Checkout from './Checkout';
+import LimitImpact from './LimitImpact';
 import { PHASES, readPhase, writePhase, type Phase } from './phase';
 import Start from './Start';
 import { NO_FILTERS, search, type Filters, type SortKey } from './search';
@@ -519,18 +520,22 @@ function Balance({
     <section className={`balance${compact ? ' is-compact' : ''}`} aria-label="Your credit limit">
       <div className="balance-top">
         <p>
-          <span className="balance-label">Balance</span>
+          <span className="balance-label">
+            <i className="dot seg-free" /> Balance
+          </span>
           <strong className="balance-value">{whole(free)}</strong>
         </p>
         <span className="tag">Credit line</span>
       </div>
       <div className="bar" aria-hidden="true">
-        <i className="seg-free" style={{ flexGrow: free }} />
         <i className="seg-used" style={{ flexGrow: account.used }} />
+        <i className="seg-free" style={{ flexGrow: free }} />
       </div>
       <dl className="balance-ends">
         <div>
-          <dt>Used limit</dt>
+          <dt>
+            <i className="dot seg-used" /> Used limit
+          </dt>
           <dd>{whole(account.used)}</dd>
         </div>
         <div>
@@ -615,42 +620,6 @@ function Dashboard({
         </div>
       </section>
     </>
-  );
-}
-
-/** What one purchase does to the limit. Shown next to the buy button. */
-function LimitImpact({ account, price }: { account: Account; price: Cents }) {
-  const free = freeLimit(account);
-  if (price > free) {
-    return (
-      <p className="impact impact-over">
-        This costs {whole(price - free)} more than your free limit of {whole(free)}. You can still buy it with
-        another ESTO method at the store, or watch the price.
-      </p>
-    );
-  }
-  return (
-    <div className="impact">
-      <p className="impact-title">
-        Your limit after this purchase: <strong>{whole(free - price)} free</strong>
-      </p>
-      <div className="bar" aria-hidden="true">
-        <i className="seg-used" style={{ flexGrow: account.used }} />
-        <i className="seg-buy" style={{ flexGrow: price }} />
-        <i className="seg-free" style={{ flexGrow: free - price }} />
-      </div>
-      <ul className="legend">
-        <li>
-          <i className="dot seg-used" /> In use {whole(account.used)}
-        </li>
-        <li>
-          <i className="dot seg-buy" /> This purchase {whole(price)}
-        </li>
-        <li>
-          <i className="dot seg-free" /> Free after {whole(free - price)}
-        </li>
-      </ul>
-    </div>
   );
 }
 
