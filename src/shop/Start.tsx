@@ -36,7 +36,7 @@ export default function Start({
     <main className="start">
       <header className="start-head">
         <p className="start-by">A concept for ESTO by Rock Gomes, for the Product Builder test.</p>
-        <h1>See what your credit line can buy</h1>
+        <h1>Shop with your credit line</h1>
         <p className="start-lead">
           Today an ESTO customer with a credit line can do one thing with it: move money to a bank account.
         </p>

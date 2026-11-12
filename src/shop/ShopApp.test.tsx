@@ -93,7 +93,7 @@ describe('shop prototype', () => {
     window.history.replaceState(null, '', '/');
     const user = userEvent.setup();
     render(<ShopApp />);
-    expect(screen.getByRole('heading', { name: 'See what your credit line can buy' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Shop with your credit line' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Credit line at checkout' })).toBeInTheDocument();
     expect(screen.queryByRole('navigation', { name: 'Main' })).not.toBeInTheDocument();
 
@@ -145,7 +145,7 @@ describe('shop prototype', () => {
     await user.click(within(nav).getByRole('button', { name: 'Invoices' }));
     expect(screen.getByText(/"Invoices" is not part of this concept/)).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'See what fits your limit' }));
+    await user.click(screen.getByRole('button', { name: 'Shop with your limit' }));
     expect(screen.getByRole('searchbox')).toBeInTheDocument();
   });
 

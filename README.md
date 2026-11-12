@@ -60,7 +60,7 @@ speaker's review before anything like this ships.
 React 19, TypeScript, Vite, Vitest and Testing Library. Plain CSS with custom properties, no UI library.
 Built with [Claude Code](https://claude.com/claude-code).
 
-## Find products for your credit line (second concept, at `/shop/`)
+## Shop with your credit line (second concept, at `/shop/`)
 
 A product search for ESTO credit-line customers. It shows real products from ESTO partner stores with the customer's own monthly price, compares stores, and sends a price alert.
 

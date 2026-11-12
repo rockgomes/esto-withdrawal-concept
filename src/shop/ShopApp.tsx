@@ -557,7 +557,7 @@ function Dashboard({
           Make a withdrawal
         </button>
         <button className="btn outline" onClick={onShop}>
-          See what fits your limit
+          Shop with your limit
         </button>
       </Balance>
       <DropList drops={drops} account={account} onOpen={onOpen} />
