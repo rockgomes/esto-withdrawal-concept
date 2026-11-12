@@ -1977,6 +1977,16 @@ h2.page-title {
   margin-top: 6px;
 }
 
+.how-link {
+  display: inline-block;
+  margin-top: 12px;
+  font-size: 13px;
+}
+
+.panel .impact {
+  margin-top: 16px;
+}
+
 .how-panel {
   margin-top: 16px;
 }

@@ -118,6 +118,16 @@ describe('shop prototype', () => {
     expect(within(flow).queryByRole('button', { name: /from my credit line/ })).not.toBeInTheDocument();
   });
 
+  it('keeps the payback block short and links to the credit line explanation', async () => {
+    const user = userEvent.setup();
+    render(<ShopApp />);
+    await user.click(await screen.findByRole('button', { name: /Apple iPhone 17 256GB/ }));
+    expect(screen.getByText(/The lowest payment for this purchase starts at/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'How a credit line works' }));
+    expect(screen.getByText('Credit used')).toBeInTheDocument();
+    expect(screen.getByText(/ESTO sends one invoice a month/)).toBeVisible();
+  });
+
   it('sends the person to the real store page in phase 1', async () => {
     const user = userEvent.setup();
     render(<ShopApp />);

@@ -16,11 +16,9 @@ import {
   LIMIT_CHOICES,
   MAX_MONTHS,
   MIN_MONTHS,
-  MINIMUM_MONTHS,
   fits,
   freeLimit,
   isHighUse,
-  minimumPathInterest,
   minimumPayment,
   plan,
   type Account,
@@ -419,6 +417,7 @@ function Shop({
             onBack={() => go(null)}
             onBought={onBought}
             onSeePurchase={() => navigate('#/dashboard')}
+            onHowItWorks={() => navigate('#/credit-line')}
             phase={phase}
           />
         )}
@@ -730,6 +729,7 @@ function ProductView({
   onBack,
   onBought,
   onSeePurchase,
+  onHowItWorks,
   phase,
 }: {
   product: Product;
@@ -740,6 +740,7 @@ function ProductView({
   onBack: () => void;
   onBought: (purchase: Purchase) => void;
   onSeePurchase: () => void;
+  onHowItWorks: () => void;
   phase: Phase;
 }) {
   const [offerIndex, setOfferIndex] = useState(0);
@@ -760,29 +761,57 @@ function ProductView({
         ← Back to search
       </button>
       <div className="detail-grid">
-        <section className="panel">
-          <ProductImage product={product} size="hero" />
-          <p className="muted small">{[product.brand, product.category].filter(Boolean).join(' · ')}</p>
-          <h1 ref={heading} tabIndex={-1}>
-            {product.name}
-          </h1>
-          <div className="badges">
-            {bought ? (
-              <span className="badge ok">Paid (simulated)</span>
-            ) : (
-              <FitBadge price={offer.price} account={account} />
+        <div>
+          <section className="panel">
+            <ProductImage product={product} size="hero" />
+            <p className="muted small">{[product.brand, product.category].filter(Boolean).join(' · ')}</p>
+            <h1 ref={heading} tabIndex={-1}>
+              {product.name}
+            </h1>
+            <div className="badges">
+              {bought ? (
+                <span className="badge ok">Paid (simulated)</span>
+              ) : (
+                <FitBadge price={offer.price} account={account} />
+              )}
+            </div>
+            <button className="btn ghost watch-btn" aria-pressed={Boolean(watch)} onClick={onWatch}>
+              <BellIcon /> {watch ? 'Watching the price' : 'Tell me when the price goes down'}
+            </button>
+            {watch && (
+              <p className="muted small">
+                Watching since {formatDate(watch.since)}, from {money(watch.price)}. When any store goes
+                lower, ESTO sends an email to the address in your profile. The alert also shows on your
+                dashboard.
+              </p>
             )}
-          </div>
-          <button className="btn ghost watch-btn" aria-pressed={Boolean(watch)} onClick={onWatch}>
-            <BellIcon /> {watch ? 'Watching the price' : 'Tell me when the price goes down'}
-          </button>
-          {watch && (
-            <p className="muted small">
-              Watching since {formatDate(watch.since)}, from {money(watch.price)}. When any store goes lower,
-              ESTO sends an email to the address in your profile. The alert also shows on your dashboard.
-            </p>
-          )}
-        </section>
+          </section>
+
+          <section className="panel" aria-labelledby="history-title">
+            <h2 id="history-title">Price changes</h2>
+            {changes ? (
+              <ul className="history">
+                {Object.entries(changes).map(([storeId, points]) => (
+                  <li key={storeId}>
+                    <strong>
+                      {product.offers.find((o) => o.store.id === storeId)?.store.name ?? storeId}
+                    </strong>
+                    {points.map(([date, cents]) => (
+                      <span key={date} className="history-point">
+                        {formatDate(date)}: {money(cents)}
+                      </span>
+                    ))}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="muted small">
+                No price change recorded yet. The feeds are read once a day, and every change is saved from
+                then on.
+              </p>
+            )}
+          </section>
+        </div>
 
         <div>
           <section className="panel" aria-labelledby="offers-title">
@@ -817,14 +846,37 @@ function ProductView({
             <a className="store-link" href={offer.url} target="_blank" rel="noopener noreferrer">
               See it at {offer.store.name} (opens the store) ↗
             </a>
+
+            {phase === 1 ? (
+              <>
+                <a className="btn buy" href={offer.url} target="_blank" rel="noopener noreferrer">
+                  Go to {offer.store.name} to buy ↗
+                </a>
+                <p className="muted small pay-today">
+                  You pay at the {offer.store.name} checkout, as today. If you choose ESTO there, you apply
+                  and sign a new contract. Phase 2 removes both steps.
+                </p>
+              </>
+            ) : (
+              <>
+                {!bought && <LimitImpact account={account} price={offer.price} />}
+                <button className="btn buy" disabled={bought} onClick={() => setBuying(true)}>
+                  {bought
+                    ? 'Paid (simulated)'
+                    : ok
+                      ? `Buy at ${offer.store.name} with your credit line`
+                      : `Buy at ${offer.store.name}`}
+                </button>
+              </>
+            )}
           </section>
 
           <section className="panel" aria-labelledby="plan-title">
             <h2 id="plan-title">Paying it back</h2>
             <p className="pay-lead">
-              A credit line has one invoice a month. For this purchase the lowest payment starts at{' '}
-              <strong>{money(minimumPayment(offer.price, account.rate))}</strong>. It goes down each month,
-              because you pay interest only on what you still owe.
+              The lowest payment for this purchase starts at{' '}
+              <strong>{money(minimumPayment(offer.price, account.rate))}</strong> a month. It gets smaller
+              every month.
             </p>
             <label className="slider">
               <span>
@@ -853,59 +905,10 @@ function ProductView({
                 <dd>{money(p.total)}</dd>
               </div>
             </dl>
-            <p className="muted small">
-              The slider is a calculator, not a contract. You can pay more in any month at no extra cost. If
-              you only pay the lowest amount, it takes {MINIMUM_MONTHS} months and costs about{' '}
-              {whole(minimumPathInterest(offer.price, account.rate))} in interest.
-            </p>
-            <HowItWorks />
-            {phase === 1 ? (
-              <>
-                <a className="btn buy" href={offer.url} target="_blank" rel="noopener noreferrer">
-                  Go to {offer.store.name} to buy ↗
-                </a>
-                <p className="muted small pay-today">
-                  You pay at the {offer.store.name} checkout, as today. If you choose ESTO there, you apply
-                  and sign a new contract. Phase 2 removes both steps.
-                </p>
-              </>
-            ) : (
-              <>
-                {!bought && <LimitImpact account={account} price={offer.price} />}
-                <button className="btn buy" disabled={bought} onClick={() => setBuying(true)}>
-                  {bought
-                    ? 'Paid (simulated)'
-                    : ok
-                      ? `Buy at ${offer.store.name} with your credit line`
-                      : `Buy at ${offer.store.name}`}
-                </button>
-              </>
-            )}
-          </section>
-
-          <section className="panel" aria-labelledby="history-title">
-            <h2 id="history-title">Price changes</h2>
-            {changes ? (
-              <ul className="history">
-                {Object.entries(changes).map(([storeId, points]) => (
-                  <li key={storeId}>
-                    <strong>
-                      {product.offers.find((o) => o.store.id === storeId)?.store.name ?? storeId}
-                    </strong>
-                    {points.map(([date, cents]) => (
-                      <span key={date} className="history-point">
-                        {formatDate(date)}: {money(cents)}
-                      </span>
-                    ))}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="muted small">
-                No price change recorded yet. The feeds are read once a day, and every change is saved from
-                then on.
-              </p>
-            )}
+            <p className="muted small">Paying more in a month costs nothing extra.</p>
+            <button className="link how-link" onClick={onHowItWorks}>
+              How a credit line works
+            </button>
           </section>
         </div>
       </div>
