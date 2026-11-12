@@ -24,7 +24,7 @@ import {
   type Account,
 } from './credit';
 import Checkout from './Checkout';
-import CreditExplainer from './CreditExplainer';
+import CreditInfo from './CreditInfo';
 import LimitImpact from './LimitImpact';
 import { PHASES, readPhase, writePhase, type Phase } from './phase';
 import Start from './Start';
@@ -97,21 +97,24 @@ const PAGE_HASH: Record<Page, string> = {
 interface Route {
   page: Page;
   productId: string | null;
+  /** The Credit Line page has two tabs, as in the real app. */
+  creditTab: 'mine' | 'info';
 }
 
 function readRoute(): Route {
   const hash = window.location.hash;
   const product = hash.match(/^#\/p\/(.+)$/);
-  if (product) return { page: 'shop', productId: decodeURIComponent(product[1]) };
+  if (product) return { page: 'shop', productId: decodeURIComponent(product[1]), creditTab: 'mine' };
+  const creditTab = hash === '#/credit-line?tab=information' ? 'info' : 'mine';
   const page: Page =
     hash === '#/dashboard'
       ? 'dashboard'
       : hash === '#/transactions'
         ? 'transactions'
-        : hash === '#/credit-line'
+        : hash.startsWith('#/credit-line')
           ? 'credit'
           : 'shop';
-  return { page, productId: null };
+  return { page, productId: null, creditTab };
 }
 
 function useRoute(): [Route, (hash: string) => void] {
@@ -346,7 +349,7 @@ function Shop({
   const [watches, setWatches] = useState<Watch[]>(readWatches);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [simulated, setSimulated] = useState<string | null>(null);
-  const { productId, page } = route;
+  const { productId, page, creditTab } = route;
   const go = (id: string | null) => navigate(id ? `#/p/${encodeURIComponent(id)}` : '#/');
 
   const catalog = useMemo(
@@ -393,7 +396,14 @@ function Shop({
         ) : page === 'transactions' ? (
           <Transactions purchases={purchases} />
         ) : page === 'credit' ? (
-          <CreditLine account={account} purchases={purchases} onOther={onOther} onShop={() => go(null)} />
+          <CreditLine
+            account={account}
+            purchases={purchases}
+            tab={creditTab}
+            onTab={(tab) => navigate(tab === 'info' ? '#/credit-line?tab=information' : '#/credit-line')}
+            onOther={onOther}
+            onShop={() => go(null)}
+          />
         ) : (
           <Balance account={account} compact />
         )}
@@ -417,7 +427,7 @@ function Shop({
             onBack={() => go(null)}
             onBought={onBought}
             onSeePurchase={() => navigate('#/dashboard')}
-            onHowItWorks={() => navigate('#/credit-line')}
+            onHowItWorks={() => navigate('#/credit-line?tab=information')}
             phase={phase}
           />
         )}
@@ -1123,11 +1133,15 @@ function Transactions({ purchases }: { purchases: Purchase[] }) {
 function CreditLine({
   account,
   purchases,
+  tab,
+  onTab,
   onOther,
   onShop,
 }: {
   account: Account;
   purchases: Purchase[];
+  tab: 'mine' | 'info';
+  onTab: (tab: 'mine' | 'info') => void;
   onOther: (name: string) => void;
   onShop: () => void;
 }) {
@@ -1141,40 +1155,53 @@ function CreditLine({
           Withdraw money
         </button>
       </Balance>
-      <section aria-labelledby="details-title">
-        <h2 id="details-title" className="page-title">
-          Details
-        </h2>
-        <dl className="details">
-          <div>
-            <dt>Credit limit</dt>
-            <dd>{whole(account.limit)}</dd>
-          </div>
-          <div>
-            <dt>Credit used</dt>
-            <dd>{whole(account.used)}</dd>
-          </div>
-          <div>
-            <dt>Available</dt>
-            <dd>{whole(freeLimit(account))}</dd>
-          </div>
-        </dl>
-      </section>
-      <CreditExplainer account={account} onShop={onShop} />
-      <section aria-labelledby="bought-title">
-        <h2 id="bought-title" className="page-title">
-          Purchases from your credit line <span className="nav-badge">NEW</span>
-        </h2>
-        <div className="panel">
-          {purchases.length === 0 ? (
-            <p className="muted">
-              No purchase yet. A store purchase that you pay from the credit line shows here.
-            </p>
-          ) : (
-            <PurchaseRows purchases={purchases} />
-          )}
-        </div>
-      </section>
+      <div className="tabs" role="tablist" aria-label="Credit line">
+        <button role="tab" aria-selected={tab === 'mine'} onClick={() => onTab('mine')}>
+          My credit line
+        </button>
+        <button role="tab" aria-selected={tab === 'info'} onClick={() => onTab('info')}>
+          Information
+        </button>
+      </div>
+      {tab === 'info' ? (
+        <CreditInfo onShop={onShop} />
+      ) : (
+        <>
+          <section aria-labelledby="details-title">
+            <h2 id="details-title" className="page-title">
+              Details
+            </h2>
+            <dl className="details">
+              <div>
+                <dt>Credit limit</dt>
+                <dd>{whole(account.limit)}</dd>
+              </div>
+              <div>
+                <dt>Credit used</dt>
+                <dd>{whole(account.used)}</dd>
+              </div>
+              <div>
+                <dt>Available</dt>
+                <dd>{whole(freeLimit(account))}</dd>
+              </div>
+            </dl>
+          </section>
+          <section aria-labelledby="bought-title">
+            <h2 id="bought-title" className="page-title">
+              Purchases from your credit line <span className="nav-badge">NEW</span>
+            </h2>
+            <div className="panel">
+              {purchases.length === 0 ? (
+                <p className="muted">
+                  No purchase yet. A store purchase that you pay from the credit line shows here.
+                </p>
+              ) : (
+                <PurchaseRows purchases={purchases} />
+              )}
+            </div>
+          </section>
+        </>
+      )}
     </>
   );
 }

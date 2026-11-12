@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ShopApp from './ShopApp';
@@ -93,8 +93,6 @@ describe('shop prototype', () => {
     expect(row).toHaveTextContent('1 079,00 €');
 
     await user.click(screen.getByRole('button', { name: 'Credit Line' }));
-    expect(screen.getByText('How a credit line works')).toBeInTheDocument();
-    expect(screen.getByText(/ESTO sends one invoice a month/)).toBeVisible();
     expect(screen.getByText('Credit used').parentElement).toHaveTextContent('1 399 €');
     expect(screen.getByText(/Your lowest monthly payment went up by/)).toBeInTheDocument();
   });
@@ -124,37 +122,32 @@ describe('shop prototype', () => {
     await user.click(await screen.findByRole('button', { name: /Apple iPhone 17 256GB/ }));
     expect(screen.getByText(/The lowest payment for this purchase starts at/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'How a credit line works' }));
-    expect(screen.getByText('Credit used')).toBeInTheDocument();
-    expect(screen.getByText(/ESTO sends one invoice a month/)).toBeVisible();
+    expect(screen.getByRole('tab', { name: 'Information' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('heading', { name: 'How it works' })).toBeInTheDocument();
   });
 
-  it('explains the credit line with a sandbox that follows what the person does', async () => {
+  it('explains the credit line on an Information tab, with the tiles of the real page and one new tile', async () => {
     const user = userEvent.setup();
     render(<ShopApp />);
     await user.click(await screen.findByRole('button', { name: 'Credit Line' }));
-    const box = screen.getByRole('region', { name: 'How a credit line works' });
-    expect(within(box).getByText(/In use/)).toHaveTextContent('320 €');
-    // It starts at the slowest way: 120 months, ESTO's lowest payments.
-    expect(within(box).getByText('First invoice, month 1').parentElement).toHaveTextContent('12,56 €');
-    expect(within(box).getByText('Last invoice, month 120')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'My credit line' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByText('Credit used')).toBeInTheDocument();
 
-    await user.click(within(box).getByRole('button', { name: /^Use 400/ }));
-    expect(within(box).getByText(/In use/)).toHaveTextContent('720 €');
-    expect(within(box).getByText('First invoice, month 1').parentElement).toHaveTextContent('28,26 €');
+    await user.click(screen.getByRole('tab', { name: 'Information' }));
+    expect(window.location.hash).toBe('#/credit-line?tab=information');
+    for (const title of [
+      'Apply and sign for free',
+      'Pay only for what you use',
+      'Monthly payments decrease',
+      'Payments replenish balance',
+    ]) {
+      expect(screen.getByRole('heading', { name: title })).toBeInTheDocument();
+    }
+    expect(screen.getByRole('heading', { name: /Pay at a store from your limit/ })).toBeInTheDocument();
+    expect(screen.queryByText('Credit used')).not.toBeInTheDocument();
 
-    // The real balance card does not change.
-    expect(screen.getByLabelText('Your credit limit')).toHaveTextContent('1 180 €');
-
-    // The slider goes from 3 to 120 months, and the invoices follow it.
-    const pace = within(box).getByRole('slider');
-    expect(pace).toHaveAttribute('max', '120');
-    fireEvent.change(pace, { target: { value: '12' } });
-    expect(within(box).getByText('Last invoice, month 12')).toBeInTheDocument();
-    expect(within(box).getByText('Middle invoice, month 6')).toBeInTheDocument();
-
-    for (let i = 0; i < 4; i++) await user.click(within(box).getByRole('button', { name: /^Pay back 200/ }));
-    expect(within(box).getByText(/Nothing is in use/)).toBeInTheDocument();
-    expect(within(box).getByRole('button', { name: /^Pay back 200/ })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Find a product' }));
+    expect(await screen.findByRole('searchbox')).toBeInTheDocument();
   });
 
   it('sends the person to the real store page in phase 1', async () => {
