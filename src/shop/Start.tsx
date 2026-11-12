@@ -38,8 +38,11 @@ export default function Start({
         <p className="start-by">A concept for ESTO by Rock Gomes, for the Product Builder test.</p>
         <h1>Shop with your credit line</h1>
         <p className="start-lead">
-          An ESTO customer already has an approved limit. This shows what it can buy today, at which store,
-          and for how much a month.
+          Today an ESTO customer with a credit line can do one thing with it: move money to a bank account.
+        </p>
+        <p className="start-lead">
+          This concept adds a Shop to the ESTO app. The customer finds real products from ESTO partner stores,
+          sees their own monthly price, and pays from the limit.
         </p>
       </header>
 
@@ -120,8 +123,8 @@ export default function Start({
       <section className="phases" aria-labelledby="phases-title">
         <h2 id="phases-title">It ships in two phases</h2>
         <p className="phases-today">
-          Today a credit line has one action: a withdrawal to a bank account. It takes 1 to 3 days, or it
-          costs 19,90 € to get it at once.
+          A withdrawal takes 1 to 3 days, or it costs 19,90 € to get the money at once. Each phase takes away
+          a part of that.
         </p>
 
         <article className="phase" aria-labelledby="phase-1">
