@@ -11,7 +11,7 @@ describe('credit', () => {
 
   it('makes a plan whose parts add up', () => {
     const p = plan(107_900, DEMO_ACCOUNT, 12);
-    expect(p.monthly).toBe(10_094);
+    expect(p.monthly).toBe(10_899);
     expect(p.total).toBe(107_900 + p.cost);
     expect(plan(107_900, DEMO_ACCOUNT, 24).cost).toBeGreaterThan(p.cost);
   });

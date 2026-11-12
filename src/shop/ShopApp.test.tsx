@@ -17,6 +17,7 @@ function mockFeeds(ok = true) {
 
 beforeEach(() => {
   localStorage.clear();
+  window.history.replaceState(null, '', '/');
   window.location.hash = '';
   window.scrollTo = vi.fn();
   mockFeeds();
@@ -28,7 +29,7 @@ describe('shop prototype', () => {
   it('shows real products with a personal monthly price and a limit check', async () => {
     render(<ShopApp />);
     const phone = await screen.findByRole('button', { name: /Apple iPhone 17 256GB/ });
-    expect(phone).toHaveTextContent('100,94 € / month for you');
+    expect(phone).toHaveTextContent('108,99 € / month for you');
     expect(phone).toHaveTextContent('Fits your limit');
     expect(screen.getByRole('button', { name: /Samsung QLED/ })).toHaveTextContent('Above your free limit');
   });
@@ -41,7 +42,7 @@ describe('shop prototype', () => {
     expect(screen.queryByRole('button', { name: /iPhone 17 256GB/ })).not.toBeInTheDocument();
   });
 
-  it('compares stores, changes the plan, and buys with the limit', async () => {
+  it('compares stores, then pays from the credit line on the ESTO checkout page (phase 2)', async () => {
     const user = userEvent.setup();
     render(<ShopApp />);
     await user.click(await screen.findByRole('button', { name: /Apple iPhone 17 256GB/ }));
@@ -51,14 +52,48 @@ describe('shop prototype', () => {
     expect(offers[0]).toHaveTextContent('Lowest');
     expect(offers[1]).toHaveTextContent('2 to 4 working days');
 
-    await user.click(screen.getByRole('button', { name: 'Buy at ONOFF with your limit' }));
+    await user.click(screen.getByRole('button', { name: 'Buy at ONOFF with your credit line' }));
     const dialog = screen.getByRole('dialog');
-    expect(dialog).toHaveTextContent('12 × 100,94 €');
-    await user.click(within(dialog).getByRole('button', { name: 'Confirm with Smart-ID' }));
-    expect(
-      await within(dialog).findByText(/ONOFF has your order/, {}, { timeout: 3000 }),
-    ).toBeInTheDocument();
+    expect(dialog).toHaveTextContent('Stand-in for the ONOFF checkout');
+    await user.click(within(dialog).getByRole('button', { name: 'Continue to ESTO' }));
+
+    expect(within(dialog).getByRole('radio', { name: /Credit line/ })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    expect(dialog).toHaveTextContent('12 × 108,99 €');
+    expect(dialog).toHaveTextContent('No application and no new contract');
+
+    await user.click(within(dialog).getByRole('radio', { name: 'Hire purchase' }));
+    expect(dialog).toHaveTextContent('works as it does today');
+    await user.click(within(dialog).getByRole('button', { name: 'Use my credit line' }));
+
+    await user.click(within(dialog).getByRole('button', { name: /from my credit line/ }));
+    expect(within(dialog).getByRole('heading', { name: 'Paid from your credit line' })).toBeInTheDocument();
+    expect(dialog).toHaveTextContent('No order is made');
+    await user.click(within(dialog).getByRole('button', { name: 'Back to the shop' }));
     expect(screen.getByLabelText('Your credit limit')).toHaveTextContent('101 €');
+  });
+
+  it('sends the person to the real store page in phase 1', async () => {
+    const user = userEvent.setup();
+    render(<ShopApp />);
+    await user.click(await screen.findByRole('button', { name: /Phase 1/ }));
+    expect(window.location.search).toBe('?phase=1');
+    expect(screen.getByText(/Nothing new\. These feeds are already public/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /Apple iPhone 17 256GB/ }));
+    expect(screen.getByRole('link', { name: /Go to ONOFF to buy/ })).toHaveAttribute(
+      'href',
+      'https://onoff.ee/iphone-17',
+    );
+    expect(screen.queryByRole('button', { name: /with your credit line/ })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Hide what this phase needs' }));
+    expect(screen.getByRole('button', { name: 'Show what this phase needs' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
   });
 
   it('watches a price and shows an alert when the price goes down', async () => {

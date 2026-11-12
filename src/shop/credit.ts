@@ -2,7 +2,9 @@ import { costOf, type Cents } from '../lib/money';
 
 /**
  * The demo customer. A real customer's limit and rate come from their ESTO
- * account. These are example values, and the page says so.
+ * account. The limit and the amount in use are example values. The rate is
+ * the highest interest rate in ESTO's published credit line example (37.10%,
+ * APR 44.84% on a 500 EUR limit). The page says so.
  */
 export interface Account {
   limit: Cents;
@@ -11,7 +13,7 @@ export interface Account {
   rate: number;
 }
 
-export const DEMO_ACCOUNT: Account = { limit: 150_000, used: 32_000, rate: 21.9 };
+export const DEMO_ACCOUNT: Account = { limit: 150_000, used: 32_000, rate: 37.1 };
 export const LIMIT_CHOICES: Cents[] = [50_000, 150_000, 300_000];
 export const DEFAULT_MONTHS = 12;
 export const MIN_MONTHS = 3;

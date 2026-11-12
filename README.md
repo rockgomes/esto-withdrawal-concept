@@ -66,7 +66,8 @@ A product search for ESTO credit-line customers. It shows real products from EST
 
 - **Real data.** `scripts/build-catalog.mjs` reads the open product feeds that stores publish in the Hinnavaatlus price list format. It matches the same product across stores by barcode (GTIN) and writes `public/data/catalog.json`.
 - **Daily refresh.** `.github/workflows/refresh-catalog.yml` runs the script once a day and commits the result. Real price changes are saved to `public/data/history.json`.
-- **Example data.** The customer (limit, amount in use, interest rate) and the purchase step are simulated. The page says so.
+- **Two phases.** A bar above the app switches between them. Phase 1: search, the customer's own monthly price, and price alerts, then the real store page. Phase 2: "Credit line" as a new method on ESTO's checkout page.
+- **Example data.** The customer's limit and amount in use are examples. The 37.10% rate is the highest interest rate in ESTO's own credit line example. The phase 2 payment is simulated, and the store checkout page is a stand-in. The page says so.
 
 | File                      | What it holds                                                                                    |
 | ------------------------- | ------------------------------------------------------------------------------------------------ |
@@ -74,6 +75,8 @@ A product search for ESTO credit-line customers. It shows real products from EST
 | `src/shop/search.ts`      | Search, filters, and ranking.                                                                    |
 | `src/shop/credit.ts`      | Free limit, payment plan, and lowest allowed payment.                                            |
 | `src/shop/watch.ts`       | Price watch and price-drop alerts.                                                               |
+| `src/shop/Checkout.tsx`   | Phase 2: the store checkout stand-in and the ESTO checkout page.                                 |
+| `src/shop/phase.ts`       | The two phases and what each one needs.                                                          |
 | `src/shop/ShopApp.tsx`    | The screens.                                                                                     |
 
 Run `node scripts/build-catalog.mjs` to refresh the catalog by hand. This is an unofficial concept. Product data belongs to each store.

@@ -1038,6 +1038,263 @@ input[type='range'] {
   animation: pop 0.4s var(--ease) both;
 }
 
+/* ─── Phase bar (outside the app frame) ─────────────────────────────── */
+
+.phasebar {
+  background: #0a0a0a;
+  color: #ffffff;
+  border-bottom: 1px solid #2e302e;
+}
+
+.phasebar-in {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 14px 20px 16px;
+}
+
+.phasebar-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+}
+
+.phasebar-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #a4a8a3;
+}
+
+.phase-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.phase-switch button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 6px 14px 6px 6px;
+  border: 1px solid #3c3f3c;
+  border-radius: 999px;
+  background: none;
+  color: #ffffff;
+  font-weight: 600;
+  text-align: left;
+}
+
+.phase-switch button:hover {
+  border-color: #a4a8a3;
+}
+
+.phase-switch button[aria-pressed='true'] {
+  background: #ffffff;
+  border-color: #ffffff;
+  color: #0a0a0a;
+}
+
+.phase-n {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #2e302e;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.phase-switch button[aria-pressed='true'] .phase-n {
+  background: var(--green);
+  color: #0a0a0a;
+}
+
+.phasebar :focus-visible {
+  outline-color: #93c5fd;
+}
+
+.phase-more {
+  display: block;
+  margin-top: 10px;
+  padding: 6px 0;
+  border: 0;
+  background: none;
+  color: #a4a8a3;
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.phase-facts[hidden] {
+  display: none;
+}
+
+.phase-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 24px;
+  margin: 6px 0 0;
+}
+
+.phase-facts dt {
+  font-size: 12px;
+  color: #a4a8a3;
+}
+
+.phase-facts dd {
+  margin: 2px 0 0;
+  font-size: 13px;
+}
+
+/* ─── Checkout (phase 2) ────────────────────────────────────────────── */
+
+.steps {
+  display: flex;
+  gap: 6px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.steps li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--line);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.steps li[aria-current='step'] {
+  color: var(--ink);
+  font-weight: 600;
+  border-color: var(--ink);
+}
+
+.step-n {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--card-2);
+  font-size: 11px;
+}
+
+.checkout.is-esto {
+  background: var(--bg);
+}
+
+.checkout h3 {
+  margin-top: 18px;
+}
+
+.checkout .demo-note {
+  margin-top: 0;
+}
+
+.pay-list {
+  margin: 8px 0 18px;
+  padding: 0;
+  list-style: none;
+}
+
+.pay-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  margin: 0 0 6px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--muted);
+}
+
+.pay-list li.is-picked {
+  color: var(--ink);
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.pay-list li span span {
+  display: block;
+}
+
+.esto-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.methods {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.method {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  font-weight: 600;
+}
+
+.method[aria-checked='true'] {
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.esto-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin-bottom: 12px;
+}
+
+.esto-price {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.esto-ok {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--green-soft);
+  color: var(--green-ink);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.steps-note {
+  margin: 12px 0 0;
+}
+
+.pay-today {
+  margin: 10px 0 0;
+}
+
 /* ─── About ─────────────────────────────────────────────────────────── */
 
 .about {
@@ -1183,6 +1440,20 @@ input[type='range'] {
 }
 
 @media (max-width: 800px) {
+  .phase-facts {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .phasebar-in {
+    padding: 12px 12px 14px;
+  }
+
+  .phase-switch,
+  .phase-switch button {
+    width: 100%;
+  }
+
   .app {
     display: block;
     padding: 0 0 24px;

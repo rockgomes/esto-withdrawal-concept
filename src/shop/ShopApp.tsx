@@ -22,6 +22,8 @@ import {
   plan,
   type Account,
 } from './credit';
+import Checkout from './Checkout';
+import { PHASES, readPhase, writePhase, type Phase } from './phase';
 import { NO_FILTERS, search, type Filters, type SortKey } from './search';
 import {
   priceDrops,
@@ -108,6 +110,11 @@ export default function ShopApp() {
   const [attempt, setAttempt] = useState(0);
   const [route, navigate] = useRoute();
   const [notice, setNotice] = useState('');
+  const [phase, setPhase] = useState<Phase>(readPhase);
+  const pickPhase = (next: Phase) => {
+    setPhase(next);
+    writePhase(next);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -133,50 +140,103 @@ export default function ShopApp() {
     setNotice(`"${name}" is not part of this concept. Shop and Dashboard are.`);
 
   return (
-    <div className="app">
-      <Sidebar page={route.page} onNavigate={navigate} onOther={notBuilt} />
-      <div className="app-main">
-        {load.status === 'loading' && (
-          <main className="page" aria-busy="true">
-            <p className="status" role="status">
-              Loading the store feeds…
-            </p>
-            <div className="grid" aria-hidden="true">
-              {Array.from({ length: 8 }, (_, i) => (
-                <div className="card skeleton" key={i} />
-              ))}
-            </div>
-          </main>
-        )}
-        {load.status === 'error' && (
-          <main className="page">
-            <div className="panel" role="alert">
-              <h1>The product data did not load</h1>
-              <p className="muted">{load.message}</p>
-              <button className="btn" onClick={() => setAttempt((n) => n + 1)}>
-                Try again
-              </button>
-            </div>
-          </main>
-        )}
-        {load.status === 'ready' && (
-          <Shop
-            catalog={load.catalog}
-            history={load.history}
-            route={route}
-            navigate={navigate}
-            onOther={notBuilt}
-          />
-        )}
-        <p className="legal">
-          Concept by Rock Gomes for the ESTO Product Builder test. Not made by ESTO AS. Product data belongs
-          to each store.
+    <>
+      <PhaseBar phase={phase} onPick={pickPhase} />
+      <div className="app">
+        <Sidebar page={route.page} onNavigate={navigate} onOther={notBuilt} />
+        <div className="app-main">
+          {load.status === 'loading' && (
+            <main className="page" aria-busy="true">
+              <p className="status" role="status">
+                Loading the store feeds…
+              </p>
+              <div className="grid" aria-hidden="true">
+                {Array.from({ length: 8 }, (_, i) => (
+                  <div className="card skeleton" key={i} />
+                ))}
+              </div>
+            </main>
+          )}
+          {load.status === 'error' && (
+            <main className="page">
+              <div className="panel" role="alert">
+                <h1>The product data did not load</h1>
+                <p className="muted">{load.message}</p>
+                <button className="btn" onClick={() => setAttempt((n) => n + 1)}>
+                  Try again
+                </button>
+              </div>
+            </main>
+          )}
+          {load.status === 'ready' && (
+            <Shop
+              catalog={load.catalog}
+              history={load.history}
+              route={route}
+              navigate={navigate}
+              onOther={notBuilt}
+              phase={phase}
+            />
+          )}
+          <p className="legal">
+            Concept by Rock Gomes for the ESTO Product Builder test. Not made by ESTO AS. Product data belongs
+            to each store.
+          </p>
+        </div>
+        <p className={`notice${notice ? ' is-on' : ''}`} role="status">
+          {notice}
         </p>
       </div>
-      <p className={`notice${notice ? ' is-on' : ''}`} role="status">
-        {notice}
-      </p>
-    </div>
+    </>
+  );
+}
+
+/**
+ * Sits above the app, outside the ESTO frame. It is the reviewer's control,
+ * not a part of the product.
+ */
+function PhaseBar({ phase, onPick }: { phase: Phase; onPick: (phase: Phase) => void }) {
+  const info = PHASES.find((p) => p.id === phase) ?? PHASES[0];
+  // Open on a wide screen. On a phone it starts closed, so the app stays in view.
+  const [open, setOpen] = useState(() => window.matchMedia?.('(min-width: 801px)').matches ?? true);
+  return (
+    <aside className="phasebar" aria-label="Concept phases">
+      <div className="phasebar-in">
+        <div className="phasebar-top">
+          <span className="phasebar-label">Concept roadmap</span>
+          <div className="phase-switch" role="group" aria-label="Phase">
+            {PHASES.map((p) => (
+              <button key={p.id} aria-pressed={p.id === phase} onClick={() => onPick(p.id)}>
+                <span className="phase-n">Phase {p.id}</span>
+                {p.name}
+              </button>
+            ))}
+          </div>
+        </div>
+        <button
+          className="phase-more"
+          aria-expanded={open}
+          aria-controls="phase-facts"
+          onClick={() => setOpen((o) => !o)}
+        >
+          {open ? 'Hide what this phase needs' : 'Show what this phase needs'}
+        </button>
+        <dl className="phase-facts" id="phase-facts" hidden={!open}>
+          <div>
+            <dt>The customer gets</dt>
+            <dd>{info.customer}</dd>
+          </div>
+          <div>
+            <dt>ESTO builds</dt>
+            <dd>{info.esto}</dd>
+          </div>
+          <div>
+            <dt>Stores do</dt>
+            <dd>{info.stores}</dd>
+          </div>
+        </dl>
+      </div>
+    </aside>
   );
 }
 
@@ -254,12 +314,14 @@ function Shop({
   route,
   navigate,
   onOther,
+  phase,
 }: {
   catalog: Catalog;
   history: PriceHistory;
   route: Route;
   navigate: (hash: string) => void;
   onOther: (name: string) => void;
+  phase: Phase;
 }) {
   const [account, setAccount] = useState<Account>(DEMO_ACCOUNT);
   const [query, setQuery] = useState('');
@@ -334,6 +396,7 @@ function Shop({
             onWatch={() => onWatch(product)}
             onBack={() => go(null)}
             onBought={onBought}
+            phase={phase}
           />
         )}
         {!productId && page === 'shop' && (
@@ -657,6 +720,7 @@ function ProductView({
   onWatch,
   onBack,
   onBought,
+  phase,
 }: {
   product: Product;
   account: Account;
@@ -665,6 +729,7 @@ function ProductView({
   onWatch: () => void;
   onBack: () => void;
   onBought: (purchase: Purchase) => void;
+  phase: Phase;
 }) {
   const [offerIndex, setOfferIndex] = useState(0);
   const [months, setMonths] = useState(DEFAULT_MONTHS);
@@ -692,7 +757,7 @@ function ProductView({
           </h1>
           <div className="badges">
             {bought ? (
-              <span className="badge ok">Bought (simulated)</span>
+              <span className="badge ok">Paid (simulated)</span>
             ) : (
               <FitBadge price={offer.price} account={account} />
             )}
@@ -776,10 +841,24 @@ function ProductView({
               The lowest payment your credit line allows for this amount is{' '}
               {money(minimumPayment(offer.price, account.rate))} a month. A fixed plan costs less interest.
             </p>
-            {!bought && <LimitImpact account={account} price={offer.price} />}
-            <button className="btn buy" disabled={!ok || bought} onClick={() => setBuying(true)}>
-              {bought ? 'Bought (simulated)' : `Buy at ${offer.store.name} with your limit`}
-            </button>
+            {phase === 1 ? (
+              <>
+                <a className="btn buy" href={offer.url} target="_blank" rel="noopener noreferrer">
+                  Go to {offer.store.name} to buy ↗
+                </a>
+                <p className="muted small pay-today">
+                  You pay at the {offer.store.name} checkout, as today. If you choose ESTO there, you apply
+                  and sign a new contract. Phase 2 removes both steps.
+                </p>
+              </>
+            ) : (
+              <>
+                {!bought && <LimitImpact account={account} price={offer.price} />}
+                <button className="btn buy" disabled={!ok || bought} onClick={() => setBuying(true)}>
+                  {bought ? 'Paid (simulated)' : `Buy at ${offer.store.name} with your credit line`}
+                </button>
+              </>
+            )}
           </section>
 
           <section className="panel" aria-labelledby="history-title">
@@ -809,137 +888,19 @@ function ProductView({
         </div>
       </div>
       {buying && (
-        <BuySheet
+        <Checkout
           product={product}
           offer={offer}
           months={months}
           account={account}
           onClose={() => setBuying(false)}
-          onDone={() => {
+          onPaid={() => {
             setBought(true);
             onBought({ product, offer, months, monthly: p.monthly });
           }}
         />
       )}
     </article>
-  );
-}
-
-function BuySheet({
-  product,
-  offer,
-  months,
-  account,
-  onClose,
-  onDone,
-}: {
-  product: Product;
-  offer: Offer;
-  months: number;
-  account: Account;
-  onClose: () => void;
-  onDone: () => void;
-}) {
-  const [step, setStep] = useState<'review' | 'signing' | 'done'>('review');
-  const box = useRef<HTMLDivElement>(null);
-  const p = plan(offer.price, account, months);
-  // The free limit shown after the purchase is fixed when the sheet opens.
-  const [freeAfter] = useState(() => freeLimit(account) - offer.price);
-
-  useEffect(() => {
-    box.current?.focus();
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
-  useEffect(() => {
-    if (step !== 'signing') return;
-    const timer = window.setTimeout(() => {
-      setStep('done');
-      onDone();
-    }, 1600);
-    return () => window.clearTimeout(timer);
-  }, [step, onDone]);
-
-  return (
-    <div className="modal" onClick={(e) => e.target === e.currentTarget && step !== 'signing' && onClose()}>
-      <div
-        className="sheet"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="buy-title"
-        tabIndex={-1}
-        ref={box}
-      >
-        {step === 'review' && (
-          <>
-            <h2 id="buy-title">Check your purchase</h2>
-            <p className="muted small">{product.name}</p>
-            <dl className="lines">
-              <div>
-                <dt>Store</dt>
-                <dd>{offer.store.name}</dd>
-              </div>
-              <div>
-                <dt>Price</dt>
-                <dd>{money(offer.price)}</dd>
-              </div>
-              <div>
-                <dt>Plan</dt>
-                <dd>
-                  {months} × {money(p.monthly)}
-                </dd>
-              </div>
-              <div>
-                <dt>Cost of credit</dt>
-                <dd>{money(p.cost)}</dd>
-              </div>
-              <div>
-                <dt>Free limit after</dt>
-                <dd>{whole(freeAfter)}</dd>
-              </div>
-            </dl>
-            <p className="demo-note">Prototype: no order is made and no money moves.</p>
-            <div className="btns">
-              <button className="btn" onClick={() => setStep('signing')}>
-                Confirm with Smart-ID
-              </button>
-              <button className="btn ghost" onClick={onClose}>
-                Cancel
-              </button>
-            </div>
-          </>
-        )}
-        {step === 'signing' && (
-          <div className="center" role="status">
-            <h2 id="buy-title">Confirm in your Smart-ID app</h2>
-            <div className="spinner" aria-hidden="true" />
-            <p className="muted small">This step is simulated.</p>
-          </div>
-        )}
-        {step === 'done' && (
-          <div className="center">
-            <div className="tick" aria-hidden="true">
-              ✓
-            </div>
-            <h2 id="buy-title">Done. {offer.store.name} has your order.</h2>
-            <p className="muted">
-              ESTO pays the store. You pay ESTO {money(p.monthly)} a month for {months} months.
-            </p>
-            <p className="demo-note">Prototype: this order is simulated.</p>
-            <div className="btns">
-              <button className="btn" onClick={onClose}>
-                Close
-              </button>
-              <a className="btn ghost" href={offer.url} target="_blank" rel="noopener noreferrer">
-                Open the real product page ↗
-              </a>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
   );
 }
 
@@ -1028,7 +989,7 @@ function PurchaseList({ purchases }: { purchases: Purchase[] }) {
   if (purchases.length === 0) return null;
   return (
     <section className="panel" aria-labelledby="bought-title">
-      <h2 id="bought-title">Bought with your limit (simulated)</h2>
+      <h2 id="bought-title">Paid with your credit line (simulated)</h2>
       <ul className="rows">
         {purchases.map((b, i) => (
           <li key={i} className="row-static">
@@ -1084,11 +1045,15 @@ function About({
           </ul>
           <h3>Example or simulated</h3>
           <ul>
+            <li>The customer: the limit and the amount in use.</li>
             <li>
-              The customer: the limit, the amount in use, and the {account.rate.toLocaleString('et-EE')}%
-              rate.
+              The {account.rate.toLocaleString('et-EE')}% yearly rate. It is the highest interest rate in
+              ESTO's own credit line example (APR 44,84% on a 500 € limit). Fees are not in the math here.
             </li>
-            <li>The purchase and the Smart-ID step. No order is made.</li>
+            <li>
+              Phase 2. ESTO has no credit line method at checkout today. The store checkout page is a
+              stand-in, and no order is made.
+            </li>
           </ul>
           <p className="muted small">
             This is an unofficial concept. It is not made by ESTO or by the stores. Product data belongs to
