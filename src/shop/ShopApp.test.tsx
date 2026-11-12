@@ -17,7 +17,7 @@ function mockFeeds(ok = true) {
 
 beforeEach(() => {
   localStorage.clear();
-  window.history.replaceState(null, '', '/');
+  window.history.replaceState(null, '', '/?phase=2');
   window.location.hash = '';
   window.scrollTo = vi.fn();
   mockFeeds();
@@ -78,9 +78,8 @@ describe('shop prototype', () => {
   it('sends the person to the real store page in phase 1', async () => {
     const user = userEvent.setup();
     render(<ShopApp />);
-    await user.click(await screen.findByRole('button', { name: /Phase 1/ }));
+    await user.click(await screen.findByRole('button', { name: 'Switch to Phase 1' }));
     expect(window.location.search).toBe('?phase=1');
-    expect(screen.getByText(/Nothing new\. These feeds are already public/)).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /Apple iPhone 17 256GB/ }));
     expect(screen.getByRole('link', { name: /Go to ONOFF to buy/ })).toHaveAttribute(
@@ -88,12 +87,23 @@ describe('shop prototype', () => {
       'https://onoff.ee/iphone-17',
     );
     expect(screen.queryByRole('button', { name: /with your credit line/ })).not.toBeInTheDocument();
+  });
 
-    await user.click(screen.getByRole('button', { name: 'Hide what this phase needs' }));
-    expect(screen.getByRole('button', { name: 'Show what this phase needs' })).toHaveAttribute(
-      'aria-expanded',
-      'false',
-    );
+  it('starts on a page that explains the two phases and opens the prototype', async () => {
+    window.history.replaceState(null, '', '/');
+    const user = userEvent.setup();
+    render(<ShopApp />);
+    expect(screen.getByRole('heading', { name: 'Shop with your credit line' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Credit line at checkout' })).toBeInTheDocument();
+    expect(screen.queryByRole('navigation', { name: 'Main' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Open the Phase 2 prototype' }));
+    expect(window.location.search).toBe('?phase=2');
+    expect(await screen.findByRole('searchbox')).toBeInTheDocument();
+    expect(screen.getByText('Prototype, Phase 2: Credit line at checkout')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'About the concept' }));
+    expect(screen.getByRole('heading', { name: 'Shop with your credit line' })).toBeInTheDocument();
   });
 
   it('watches a price and shows an alert when the price goes down', async () => {

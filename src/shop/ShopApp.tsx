@@ -24,6 +24,7 @@ import {
 } from './credit';
 import Checkout from './Checkout';
 import { PHASES, readPhase, writePhase, type Phase } from './phase';
+import Start from './Start';
 import { NO_FILTERS, search, type Filters, type SortKey } from './search';
 import {
   priceDrops,
@@ -110,11 +111,18 @@ export default function ShopApp() {
   const [attempt, setAttempt] = useState(0);
   const [route, navigate] = useRoute();
   const [notice, setNotice] = useState('');
-  const [phase, setPhase] = useState<Phase>(readPhase);
-  const pickPhase = (next: Phase) => {
+  const [phase, setPhase] = useState<Phase | null>(readPhase);
+  const pickPhase = (next: Phase | null) => {
     setPhase(next);
     writePhase(next);
+    window.scrollTo({ top: 0 });
   };
+
+  useEffect(() => {
+    const onPop = () => setPhase(readPhase());
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -139,12 +147,23 @@ export default function ShopApp() {
   const notBuilt = (name: string) =>
     setNotice(`"${name}" is not part of this concept. Shop and Dashboard are.`);
 
+  if (phase === null) {
+    const ready = load.status === 'ready' ? load.catalog : null;
+    return (
+      <Start
+        products={ready ? ready.products.length : null}
+        stores={ready ? ready.stores.length : null}
+        onOpen={pickPhase}
+      />
+    );
+  }
+
   return (
     <>
-      <PhaseBar phase={phase} onPick={pickPhase} />
       <div className="app">
         <Sidebar page={route.page} onNavigate={navigate} onOther={notBuilt} />
         <div className="app-main">
+          <ProtoTag phase={phase} onPick={pickPhase} />
           {load.status === 'loading' && (
             <main className="page" aria-busy="true">
               <p className="status" role="status">
@@ -191,52 +210,22 @@ export default function ShopApp() {
   );
 }
 
-/**
- * Sits above the app, outside the ESTO frame. It is the reviewer's control,
- * not a part of the product.
- */
-function PhaseBar({ phase, onPick }: { phase: Phase; onPick: (phase: Phase) => void }) {
+/** One small line that says this is a prototype, and which phase it shows. */
+function ProtoTag({ phase, onPick }: { phase: Phase; onPick: (phase: Phase | null) => void }) {
   const info = PHASES.find((p) => p.id === phase) ?? PHASES[0];
-  // Open on a wide screen. On a phone it starts closed, so the app stays in view.
-  const [open, setOpen] = useState(() => window.matchMedia?.('(min-width: 801px)').matches ?? true);
+  const other: Phase = phase === 1 ? 2 : 1;
   return (
-    <aside className="phasebar" aria-label="Concept phases">
-      <div className="phasebar-in">
-        <div className="phasebar-top">
-          <span className="phasebar-label">Concept roadmap</span>
-          <div className="phase-switch" role="group" aria-label="Phase">
-            {PHASES.map((p) => (
-              <button key={p.id} aria-pressed={p.id === phase} onClick={() => onPick(p.id)}>
-                <span className="phase-n">Phase {p.id}</span>
-                {p.name}
-              </button>
-            ))}
-          </div>
-        </div>
-        <button
-          className="phase-more"
-          aria-expanded={open}
-          aria-controls="phase-facts"
-          onClick={() => setOpen((o) => !o)}
-        >
-          {open ? 'Hide what this phase needs' : 'Show what this phase needs'}
-        </button>
-        <dl className="phase-facts" id="phase-facts" hidden={!open}>
-          <div>
-            <dt>The customer gets</dt>
-            <dd>{info.customer}</dd>
-          </div>
-          <div>
-            <dt>ESTO builds</dt>
-            <dd>{info.esto}</dd>
-          </div>
-          <div>
-            <dt>Stores do</dt>
-            <dd>{info.stores}</dd>
-          </div>
-        </dl>
-      </div>
-    </aside>
+    <p className="proto-tag">
+      <span>
+        Prototype, Phase {phase}: {info.name}
+      </span>
+      <button className="link" onClick={() => onPick(other)}>
+        Switch to Phase {other}
+      </button>
+      <button className="link" onClick={() => onPick(null)}>
+        About the concept
+      </button>
+    </p>
   );
 }
 

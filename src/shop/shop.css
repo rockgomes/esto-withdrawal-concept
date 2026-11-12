@@ -1013,113 +1013,154 @@ input[type='range'] {
   animation: pop 0.4s var(--ease) both;
 }
 
-/* ─── Phase bar (outside the app frame) ─────────────────────────────── */
+/* ─── Start page and the prototype label ────────────────────────────── */
 
-.phasebar {
-  background: #0a0a0a;
-  color: #ffffff;
-  border-bottom: 1px solid #2e302e;
-}
-
-.phasebar-in {
-  max-width: 1320px;
+.start {
+  max-width: 920px;
   margin: 0 auto;
-  padding: 14px 20px 16px;
+  padding: 56px 20px 32px;
 }
 
-.phasebar-top {
+.start-kicker {
+  margin: 0 0 12px;
+  color: var(--muted);
+}
+
+.start h1 {
+  margin: 0;
+  font-size: clamp(34px, 7vw, 56px);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+}
+
+.start-lead {
+  max-width: 60ch;
+  margin: 18px 0 0;
+  font-size: 17px;
+}
+
+.start-today {
+  margin: 32px 0 0;
+  padding: 20px;
+  border-radius: var(--radius);
+  background: var(--card);
+}
+
+.start-today h2 {
+  margin: 0 0 8px;
+}
+
+.start-today ul {
+  margin: 0;
+  padding-left: 18px;
+  list-style: disc;
+}
+
+.start-today li + li {
+  margin-top: 6px;
+}
+
+.start-h {
+  margin: 36px 0 12px;
+}
+
+.phase-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.phase-card {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px 16px;
+  flex-direction: column;
+  padding: 20px;
+  border-radius: var(--radius);
+  background: var(--card);
 }
 
-.phasebar-label {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #a4a8a3;
+.phase-card h3 {
+  margin: 10px 0 14px;
+  font-size: 22px;
+  letter-spacing: -0.02em;
 }
 
-.phase-switch {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.phase-switch button {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 40px;
-  padding: 6px 14px 6px 6px;
-  border: 1px solid #3c3f3c;
-  border-radius: 999px;
-  background: none;
-  color: #ffffff;
-  font-weight: 600;
-  text-align: left;
-}
-
-.phase-switch button:hover {
-  border-color: #a4a8a3;
-}
-
-.phase-switch button[aria-pressed='true'] {
-  background: #ffffff;
-  border-color: #ffffff;
-  color: #0a0a0a;
+.phase-card .btn {
+  margin-top: auto;
 }
 
 .phase-n {
+  align-self: flex-start;
+  margin: 0;
   padding: 4px 10px;
   border-radius: 999px;
-  background: #2e302e;
+  background: var(--green-soft);
+  color: var(--green-ink);
   font-size: 12px;
-  white-space: nowrap;
+  font-weight: 700;
 }
 
-.phase-switch button[aria-pressed='true'] .phase-n {
-  background: var(--green);
-  color: #0a0a0a;
+.flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
 }
 
-.phasebar :focus-visible {
-  outline-color: #93c5fd;
-}
-
-.phase-more {
-  display: block;
-  margin-top: 10px;
-  padding: 6px 0;
-  border: 0;
-  background: none;
-  color: #a4a8a3;
+.flow li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--bg);
   font-size: 13px;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  font-weight: 600;
 }
 
-.phase-facts[hidden] {
-  display: none;
+.flow li + li::before {
+  content: '→';
+  margin-left: -2px;
+  color: var(--muted);
+  font-weight: 400;
 }
 
 .phase-facts {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px 24px;
-  margin: 6px 0 0;
+  margin: 0 0 20px;
+}
+
+.phase-facts div + div {
+  margin-top: 10px;
 }
 
 .phase-facts dt {
   font-size: 12px;
-  color: #a4a8a3;
+  color: var(--muted);
 }
 
 .phase-facts dd {
   margin: 2px 0 0;
+}
+
+.start-note {
+  margin: 20px 4px 0;
+  color: var(--muted);
+}
+
+.proto-tag {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px;
+  margin: 0 4px 12px;
   font-size: 13px;
+  color: var(--muted);
+}
+
+.proto-tag .link {
+  font-weight: 500;
+  color: var(--ink);
 }
 
 /* ─── Checkout (phase 2) ────────────────────────────────────────────── */
@@ -1415,18 +1456,12 @@ input[type='range'] {
 }
 
 @media (max-width: 800px) {
-  .phase-facts {
+  .phase-cards {
     grid-template-columns: minmax(0, 1fr);
-    gap: 8px;
   }
 
-  .phasebar-in {
-    padding: 12px 12px 14px;
-  }
-
-  .phase-switch,
-  .phase-switch button {
-    width: 100%;
+  .start {
+    padding: 32px 12px 24px;
   }
 
   .app {
