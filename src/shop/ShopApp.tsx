@@ -818,7 +818,8 @@ function ProductView({
             <h2 id="plan-title">Paying it back</h2>
             <p className="pay-lead">
               A credit line has one invoice a month. For this purchase the lowest payment starts at{' '}
-              <strong>{money(minimumPayment(offer.price, account.rate))}</strong> and goes down each month.
+              <strong>{money(minimumPayment(offer.price, account.rate))}</strong>. It goes down each month,
+              because you pay interest only on what you still owe.
             </p>
             <label className="slider">
               <span>
