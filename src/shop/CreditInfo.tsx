@@ -62,9 +62,9 @@ export default function CreditInfo({ onShop, phase }: { onShop: () => void; phas
         {phase === 2 && (
           <article className="tile is-new">
             <div className="tile-pic pic-store" aria-hidden="true">
-              <span>Hire purchase</span>
-              <span className="is-on">Credit line</span>
-              <span>ESTO 3</span>
+              <span>Bank link</span>
+              <span>Card</span>
+              <span className="is-on">ESTO</span>
             </div>
             <h3>
               Pay at a store from your limit <span className="nav-badge">NEW</span>

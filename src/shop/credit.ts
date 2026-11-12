@@ -15,6 +15,8 @@ export interface Account {
 
 export const DEMO_ACCOUNT: Account = { limit: 150_000, used: 32_000, rate: 37.1 };
 export const LIMIT_CHOICES: Cents[] = [50_000, 150_000, 300_000];
+/** Demo choices for the amount in use: nothing, or the default. */
+export const USED_CHOICES: Cents[] = [0, 32_000];
 export const DEFAULT_MONTHS = 12;
 export const MIN_MONTHS = 3;
 export const MAX_MONTHS = 36;

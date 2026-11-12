@@ -150,6 +150,45 @@ describe('shop prototype', () => {
     expect(await screen.findByRole('searchbox')).toBeInTheDocument();
   });
 
+  it('shows each Dashboard block only when it has something to say', async () => {
+    const user = userEvent.setup();
+    render(<ShopApp />);
+    const nav = screen.getByRole('navigation', { name: 'Main' });
+    await user.click(within(nav).getByRole('button', { name: 'Dashboard' }));
+
+    // Before a purchase: the explanation shows, and the latest purchase does not.
+    expect(await screen.findByRole('heading', { name: 'How your credit line works' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Pay at a store/ })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Latest purchase' })).not.toBeInTheDocument();
+    // ESTO's own blocks stay.
+    expect(screen.getByRole('heading', { name: 'Personal finances' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Small loan/ })).toBeInTheDocument();
+
+    // After a purchase: the explanation is gone, and the latest purchase shows.
+    await user.click(screen.getByRole('button', { name: /Pay at a store/ }));
+    await user.click(await screen.findByRole('button', { name: /Apple iPhone 17 256GB/ }));
+    await user.click(screen.getByRole('button', { name: 'Buy at ONOFF with your credit line' }));
+    const flow = screen.getByRole('dialog');
+    await user.click(within(flow).getByRole('button', { name: 'Continue to ESTO' }));
+    await user.click(within(flow).getByRole('button', { name: 'Smart-ID' }));
+    await user.click(within(flow).getByRole('button', { name: /from my credit line/ }));
+    await user.click(within(flow).getByRole('button', { name: 'See the purchase in the ESTO app' }));
+    expect(screen.getByRole('heading', { name: 'Latest purchase' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'How your credit line works' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Personal finances' })).toBeInTheDocument();
+  });
+
+  it('lets the person hide the explanation on the Dashboard', async () => {
+    const user = userEvent.setup();
+    render(<ShopApp />);
+    await user.click(
+      within(screen.getByRole('navigation', { name: 'Main' })).getByRole('button', { name: 'Dashboard' }),
+    );
+    await user.click(await screen.findByRole('button', { name: 'Hide' }));
+    expect(screen.queryByRole('heading', { name: 'How your credit line works' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Fits your limit today' })).toBeInTheDocument();
+  });
+
   it('sends the person to the real store page in phase 1', async () => {
     const user = userEvent.setup();
     render(<ShopApp />);

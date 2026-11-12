@@ -14,6 +14,7 @@ import {
   DEFAULT_MONTHS,
   DEMO_ACCOUNT,
   LIMIT_CHOICES,
+  USED_CHOICES,
   MAX_MONTHS,
   MIN_MONTHS,
   fits,
@@ -25,6 +26,7 @@ import {
 } from './credit';
 import Checkout from './Checkout';
 import CreditInfo from './CreditInfo';
+import { EstoBlocks, HowCard } from './DashboardBlocks';
 import LimitImpact from './LimitImpact';
 import { PHASES, readPhase, writePhase, type Phase } from './phase';
 import Start from './Start';
@@ -349,6 +351,7 @@ function Shop({
   const [watches, setWatches] = useState<Watch[]>(readWatches);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [simulated, setSimulated] = useState<string | null>(null);
+  const [howHidden, setHowHidden] = useState(false);
   const { productId, page, creditTab } = route;
   const go = (id: string | null) => navigate(id ? `#/p/${encodeURIComponent(id)}` : '#/');
 
@@ -392,6 +395,9 @@ function Shop({
             onOther={onOther}
             purchases={purchases}
             onTransactions={() => navigate('#/transactions')}
+            phase={phase}
+            howHidden={howHidden}
+            onHideHow={() => setHowHidden(true)}
           />
         ) : page === 'transactions' ? (
           <Transactions purchases={purchases} phase={phase} />
@@ -515,6 +521,8 @@ function Shop({
           catalog={realCatalog}
           account={account}
           onLimit={(limit) => setAccount((a) => ({ ...a, limit }))}
+          onUsed={(used) => setAccount((a) => ({ ...a, used }))}
+          canSetUsed={purchases.length === 0}
           watches={watches}
           simulated={simulated}
           drops={drops}
@@ -583,6 +591,9 @@ function Dashboard({
   onOther,
   purchases,
   onTransactions,
+  phase,
+  howHidden,
+  onHideHow,
 }: {
   account: Account;
   catalog: Catalog;
@@ -592,6 +603,9 @@ function Dashboard({
   onOther: (name: string) => void;
   purchases: Purchase[];
   onTransactions: () => void;
+  phase: Phase;
+  howHidden: boolean;
+  onHideHow: () => void;
 }) {
   const picks = useMemo(
     () =>
@@ -614,6 +628,7 @@ function Dashboard({
           Shop with your limit
         </button>
       </Balance>
+      {purchases.length === 0 && !howHidden && <HowCard phase={phase} onShop={onShop} onHide={onHideHow} />}
       {purchases.length > 0 && (
         <section className="panel" aria-labelledby="latest-title">
           <div className="panel-head">
@@ -645,6 +660,7 @@ function Dashboard({
           ))}
         </div>
       </section>
+      <EstoBlocks onOther={onOther} />
     </>
   );
 }
@@ -1216,6 +1232,8 @@ function About({
   catalog,
   account,
   onLimit,
+  onUsed,
+  canSetUsed,
   watches,
   simulated,
   onSimulate,
@@ -1224,6 +1242,8 @@ function About({
   catalog: Catalog;
   account: Account;
   onLimit: (limit: Cents) => void;
+  onUsed: (used: Cents) => void;
+  canSetUsed: boolean;
   watches: Watch[];
   simulated: string | null;
   onSimulate: (id: string | null) => void;
@@ -1318,6 +1338,20 @@ function About({
                 onClick={() => onLimit(limit)}
               >
                 {whole(limit)}
+              </button>
+            ))}
+          </fieldset>
+          <fieldset className="control">
+            <legend>Amount in use of the example customer</legend>
+            {USED_CHOICES.map((used) => (
+              <button
+                key={used}
+                className="toggle"
+                aria-pressed={account.used === used}
+                disabled={!canSetUsed || used > account.limit}
+                onClick={() => onUsed(used)}
+              >
+                {whole(used)}
               </button>
             ))}
           </fieldset>

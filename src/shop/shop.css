@@ -2165,6 +2165,150 @@ h2.page-title {
   }
 }
 
+/* ─── Dashboard: how the credit line works, and ESTO's own blocks ───── */
+
+.how4-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.how4 .tile {
+  display: block;
+  padding: 16px;
+  border-radius: 12px;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+
+.how4 .tile.is-first {
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.how4 .tile-pic {
+  height: 64px;
+}
+
+.how4 .tile h3,
+.how4 .tile-title {
+  display: block;
+  margin: 12px 0 4px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.how4 .tile > p,
+.how4 .tile-text {
+  display: block;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.how4 .pic-store span {
+  padding: 7px 10px;
+  font-size: 12px;
+}
+
+.how4 .pic-back strong {
+  font-size: 20px;
+}
+
+.how4 .pic-months {
+  gap: 6px;
+  padding: 0;
+}
+
+.how4 .pic-months span {
+  font-size: 10px;
+}
+
+.pic-find span {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--ink);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.esto-banner {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 4px;
+  width: 100%;
+  min-height: 150px;
+  padding: 20px 22px;
+  border: 0;
+  border-radius: 10px;
+  background: #2f3a33;
+  color: #ffffff;
+  text-align: left;
+}
+
+.esto-banner strong {
+  font-size: 20px;
+  letter-spacing: -0.02em;
+}
+
+.esto-banner span {
+  font-size: 14px;
+  color: #d9dad6;
+}
+
+.loans {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.loan {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  text-align: left;
+}
+
+.loan i {
+  display: block;
+  height: 90px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  background: var(--card-2);
+}
+
+.loan strong {
+  font-size: 16px;
+}
+
+.loan span {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+@media (max-width: 1040px) {
+  .how4-row,
+  .loans {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .how4-row,
+  .loans {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .how-link {
   display: inline-block;
   margin-top: 12px;
