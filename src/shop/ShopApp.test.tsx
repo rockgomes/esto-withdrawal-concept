@@ -128,6 +128,27 @@ describe('shop prototype', () => {
     expect(screen.getByText(/ESTO sends one invoice a month/)).toBeVisible();
   });
 
+  it('explains the credit line with a sandbox that follows what the person does', async () => {
+    const user = userEvent.setup();
+    render(<ShopApp />);
+    await user.click(await screen.findByRole('button', { name: 'Credit Line' }));
+    const box = screen.getByRole('region', { name: 'How a credit line works' });
+    expect(within(box).getByText(/In use/)).toHaveTextContent('320 €');
+
+    await user.click(within(box).getByRole('button', { name: /^Use 400/ }));
+    expect(within(box).getByText(/In use/)).toHaveTextContent('720 €');
+    expect(
+      within(box).getByRole('img', { name: /Lowest payment each month\. Month 1: 28,26/ }),
+    ).toBeInTheDocument();
+
+    // The real balance card does not change.
+    expect(screen.getByLabelText('Your credit limit')).toHaveTextContent('1 180 €');
+
+    for (let i = 0; i < 4; i++) await user.click(within(box).getByRole('button', { name: /^Pay back 200/ }));
+    expect(within(box).getByText(/Nothing is in use/)).toBeInTheDocument();
+    expect(within(box).getByRole('button', { name: /^Pay back 200/ })).toBeDisabled();
+  });
+
   it('sends the person to the real store page in phase 1', async () => {
     const user = userEvent.setup();
     render(<ShopApp />);

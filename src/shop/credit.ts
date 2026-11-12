@@ -74,3 +74,11 @@ export function minimumPathInterest(amount: Cents, rate: number): Cents {
   }
   return Math.round(interest);
 }
+
+/** The two parts of the lowest payment in one month, by ESTO's rule. */
+export function lowestPaymentParts(amount: Cents, rate: number, month: number) {
+  const fixed = amount / MINIMUM_MONTHS;
+  const stillOwed = (amount * (MINIMUM_MONTHS - month + 1)) / MINIMUM_MONTHS;
+  const interest = (stillOwed * rate) / 100 / 12;
+  return { fixed: Math.round(fixed), interest: Math.round(interest), total: Math.round(fixed + interest) };
+}

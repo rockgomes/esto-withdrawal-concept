@@ -24,7 +24,7 @@ import {
   type Account,
 } from './credit';
 import Checkout from './Checkout';
-import HowItWorks from './HowItWorks';
+import CreditExplainer from './CreditExplainer';
 import LimitImpact from './LimitImpact';
 import { PHASES, readPhase, writePhase, type Phase } from './phase';
 import Start from './Start';
@@ -393,7 +393,7 @@ function Shop({
         ) : page === 'transactions' ? (
           <Transactions purchases={purchases} />
         ) : page === 'credit' ? (
-          <CreditLine account={account} purchases={purchases} onOther={onOther} />
+          <CreditLine account={account} purchases={purchases} onOther={onOther} onShop={() => go(null)} />
         ) : (
           <Balance account={account} compact />
         )}
@@ -1123,10 +1123,12 @@ function CreditLine({
   account,
   purchases,
   onOther,
+  onShop,
 }: {
   account: Account;
   purchases: Purchase[];
   onOther: (name: string) => void;
+  onShop: () => void;
 }) {
   return (
     <>
@@ -1157,9 +1159,7 @@ function CreditLine({
           </div>
         </dl>
       </section>
-      <div className="panel how-panel">
-        <HowItWorks open />
-      </div>
+      <CreditExplainer account={account} onShop={onShop} />
       <section aria-labelledby="bought-title">
         <h2 id="bought-title" className="page-title">
           Purchases from your credit line <span className="nav-badge">NEW</span>

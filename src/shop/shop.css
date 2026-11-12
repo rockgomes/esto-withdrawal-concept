@@ -1977,6 +1977,202 @@ h2.page-title {
   margin-top: 6px;
 }
 
+/* ─── Credit line explainer ─────────────────────────────────────────── */
+
+.explain-note {
+  margin: -6px 4px 14px;
+  color: var(--muted);
+}
+
+.explain-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.explain-step {
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+  border-radius: var(--radius);
+  background: var(--card);
+}
+
+.explain-n {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin: 0 0 10px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--on-ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.explain-step h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+.explain-step > .small {
+  margin: 0 0 16px;
+  min-height: 3.9em;
+}
+
+.mini .bar {
+  height: 14px;
+}
+
+.mini .bar i {
+  transition: flex-grow 0.45s var(--ease);
+}
+
+.mini-ends {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 10px 0 0;
+  font-size: 13px;
+}
+
+.mini-ends .dot {
+  display: inline-block;
+  margin-right: 4px;
+}
+
+.explain-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.explain-btns .btn {
+  flex: 1 1 120px;
+  padding: 9px 12px;
+}
+
+.explain-empty {
+  margin: 0;
+  padding: 14px;
+  border-radius: 10px;
+  background: var(--card-2);
+  color: var(--muted);
+}
+
+.chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 120px;
+}
+
+.chart-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-bar {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 3px;
+  border-radius: 3px;
+  overflow: hidden;
+  gap: 1px;
+  transition: height 0.45s var(--ease);
+}
+
+.part-fixed {
+  background: var(--ink);
+}
+
+.part-interest {
+  background: #9aa09a;
+}
+
+.chart-axis {
+  margin: 2px 0 8px;
+  font-size: 10px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.explain-step .legend {
+  margin: 0;
+}
+
+.explain-fact {
+  margin: auto 0 0;
+  padding-top: 12px;
+  font-size: 13px;
+}
+
+.versus {
+  margin: 14px 0 0;
+}
+
+.versus div + div {
+  margin-top: 12px;
+}
+
+.versus dt {
+  margin-bottom: 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.versus dd {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.versus dd i {
+  flex: none;
+  height: 12px;
+  max-width: calc(100% - 110px);
+  border-radius: 3px;
+  transition: width 0.45s var(--ease);
+}
+
+.versus-slow {
+  background: #9aa09a;
+}
+
+.versus-fast {
+  background: var(--green);
+}
+
+.explain-new {
+  margin: 12px 4px 0;
+}
+
+@media (max-width: 1040px) {
+  .explain-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .explain-step > .small {
+    min-height: 0;
+  }
+}
+
 .how-link {
   display: inline-block;
   margin-top: 12px;
