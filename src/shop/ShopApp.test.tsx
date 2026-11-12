@@ -60,8 +60,9 @@ describe('shop prototype', () => {
     await user.click(within(flow).getByRole('radio', { name: /ESTO/ }));
     await user.click(within(flow).getByRole('button', { name: 'Continue to ESTO' }));
 
-    // ESTO asks who the customer is before it can offer the credit line.
-    await user.click(within(flow).getByRole('button', { name: 'Log in as a customer with a credit line' }));
+    // ESTO has to know who the customer is before it can offer the credit line.
+    expect(within(flow).getByRole('heading', { name: 'Confirm who you are' })).toBeInTheDocument();
+    await user.click(within(flow).getByRole('button', { name: 'Smart-ID' }));
     expect(within(flow).getByRole('radio', { name: /Credit line/ })).toHaveAttribute('aria-checked', 'true');
     expect(flow).toHaveTextContent('12 × 108,99 €');
     expect(flow).toHaveTextContent('No application and no new contract');
@@ -86,14 +87,14 @@ describe('shop prototype', () => {
     expect(screen.getByText(/Your next monthly payment went up by/)).toBeInTheDocument();
   });
 
-  it('lets a customer buy above the free limit with another method, and hides the credit line from a customer without one', async () => {
+  it('lets a customer buy above the free limit with another method', async () => {
     const user = userEvent.setup();
     render(<ShopApp />);
     await user.click(await screen.findByRole('button', { name: /Samsung QLED/ }));
     await user.click(screen.getByRole('button', { name: /^Buy at \w+$/ }));
     const flow = screen.getByRole('dialog');
     await user.click(within(flow).getByRole('button', { name: 'Continue to ESTO' }));
-    await user.click(within(flow).getByRole('button', { name: 'Log in as a customer with a credit line' }));
+    await user.click(within(flow).getByRole('button', { name: 'Mobile-ID' }));
 
     expect(within(flow).getByRole('radio', { name: /Credit line.*Limit too low/ })).toBeInTheDocument();
     expect(within(flow).getByRole('radio', { name: 'Hire purchase' })).toHaveAttribute(
@@ -103,12 +104,6 @@ describe('shop prototype', () => {
     await user.click(within(flow).getByRole('radio', { name: /Credit line/ }));
     expect(flow).toHaveTextContent(/This order needs .* more/);
     expect(within(flow).queryByRole('button', { name: /from my credit line/ })).not.toBeInTheDocument();
-
-    await user.click(within(flow).getByRole('button', { name: /^Back to/ }));
-    await user.click(within(flow).getByRole('button', { name: 'Continue to ESTO' }));
-    await user.click(within(flow).getByRole('button', { name: 'Log in as a customer without one' }));
-    expect(within(flow).queryByRole('radio', { name: /Credit line/ })).not.toBeInTheDocument();
-    expect(within(flow).getAllByRole('radio')).toHaveLength(3);
   });
 
   it('sends the person to the real store page in phase 1', async () => {

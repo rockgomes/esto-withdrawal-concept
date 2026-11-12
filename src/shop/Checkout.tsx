@@ -38,8 +38,8 @@ function hostOf(url: string, fallback: string): string {
  * 1. The store's checkout. A stand-in: the real page belongs to the store.
  *    The store does not know if the customer has a credit line.
  * 2. ESTO's payment page, where the store sends the customer today. ESTO
- *    asks who the customer is. Only then can it offer "Credit line", and
- *    only when the free limit covers the order.
+ *    has to know who the customer is. Only then can it offer "Credit line",
+ *    and only when the free limit covers the order.
  * 3. The store again, with the order confirmed.
  *
  * The bar at the top works like a browser address bar. It says which site
@@ -65,7 +65,6 @@ export default function Checkout({
 }) {
   const [step, setStep] = useState<Step>('store');
   const [storePay, setStorePay] = useState<StorePay>('esto');
-  const [hasLine, setHasLine] = useState(true);
   // Fixed when the flow opens, so the numbers do not move after the payment.
   const [freeBefore] = useState(() => freeLimit(account));
   const enough = offer.price <= freeBefore;
@@ -91,12 +90,6 @@ export default function Checkout({
 
   useEffect(() => heading.current?.focus(), [step]);
 
-  const logIn = (withLine: boolean) => {
-    setHasLine(withLine);
-    setMethod(withLine && enough ? 'credit-line' : 'hire-purchase');
-    setStep('esto');
-  };
-
   const pay = () => {
     onPaid();
     setStep('confirmed');
@@ -104,10 +97,9 @@ export default function Checkout({
 
   const where: Record<Step, string> = {
     store: `You are on the ${store} site. This page is a stand-in. The store does not know if you have a credit line.`,
-    login: 'You are on ESTO. It asks who you are, as it does today. After that it can check your limit.',
-    esto: hasLine
-      ? "You are on ESTO's payment page. The new part is the Credit line option."
-      : "You are on ESTO's payment page. This customer has no credit line, so the page is as it is today.",
+    login:
+      'You are on ESTO. It has to know who you are before it can check your limit. ESTO identifies customers in its purchase flow today.',
+    esto: "You are on ESTO's payment page. The new part is the Credit line option.",
     today: "You are on ESTO's payment page. From here it is the flow of today.",
     confirmed: `ESTO sent you back to ${store}, as it does today. This page is a stand-in.`,
   };
@@ -201,20 +193,19 @@ export default function Checkout({
             <span className="muted small">Order from {store}</span>
           </div>
           <h1 id="flow-title" ref={heading} tabIndex={-1} className="ep-title">
-            Log in to continue
+            Confirm who you are
           </h1>
           <div className="esto-card">
             <p className="esto-price">{money(offer.price)}</p>
             <p className="muted small">{product.name}</p>
-            <p className="demo-note">
-              Stand-in for ESTO's own login. Choose who logs in, to see what ESTO shows each customer.
-            </p>
-            <button className="btn buy" onClick={() => logIn(true)}>
-              Log in as a customer with a credit line
-            </button>
-            <button className="btn buy outline" onClick={() => logIn(false)}>
-              Log in as a customer without one
-            </button>
+            <div className="id-list">
+              {['Smart-ID', 'Mobile-ID', 'ID card'].map((way) => (
+                <button key={way} className="btn outline" onClick={() => setStep('esto')}>
+                  {way}
+                </button>
+              ))}
+            </div>
+            <p className="demo-note">Stand-in. No real login happens. Choose any of the three to go on.</p>
           </div>
           <button className="link" onClick={() => setStep('store')}>
             Back to {store}
@@ -232,21 +223,19 @@ export default function Checkout({
             How do you want to pay?
           </h1>
           <div className="methods" role="radiogroup" aria-label="How do you want to pay?">
-            {hasLine && (
-              <button
-                role="radio"
-                aria-checked={method === 'credit-line'}
-                className="method"
-                onClick={() => setMethod('credit-line')}
-              >
-                Credit line
-                {enough ? (
-                  <span className="nav-badge">NEW</span>
-                ) : (
-                  <span className="badge no">Limit too low</span>
-                )}
-              </button>
-            )}
+            <button
+              role="radio"
+              aria-checked={method === 'credit-line'}
+              className="method"
+              onClick={() => setMethod('credit-line')}
+            >
+              Credit line
+              {enough ? (
+                <span className="nav-badge">NEW</span>
+              ) : (
+                <span className="badge no">Limit too low</span>
+              )}
+            </button>
             {TODAY_METHODS.map((m) => (
               <button
                 key={m.id}

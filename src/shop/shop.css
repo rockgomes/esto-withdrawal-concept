@@ -1775,8 +1775,10 @@ input[type='range'] {
   white-space: nowrap;
 }
 
-.esto-card .btn.buy + .btn.buy {
-  margin-top: 8px;
+.id-list {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0 4px;
 }
 
 .tx-name,
