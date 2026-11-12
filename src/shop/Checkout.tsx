@@ -271,8 +271,9 @@ export default function Checkout({
                 </div>
               </dl>
               <p className="muted small pay-how">
-                You get one invoice a month for your whole credit line. These are the lowest amounts. They go
-                down each month, and you can pay more in any month at no extra cost.
+                ESTO sends one invoice a month for the whole credit line. The amounts above are the lowest
+                amounts you can pay. The lowest amount gets smaller every month. You can pay more in any month
+                at no extra cost.
               </p>
               <p className="esto-ok">
                 No application and no new contract. You signed a credit line contract before.
