@@ -1,0 +1,301 @@
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import ShopApp from './ShopApp';
+import { PACKED } from './testCatalog';
+
+function mockFeeds(ok = true) {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => ({
+      ok,
+      status: ok ? 200 : 503,
+      json: async () => (url.includes('history') ? {} : PACKED),
+    })),
+  );
+}
+
+beforeEach(() => {
+  localStorage.clear();
+  window.history.replaceState(null, '', '/?phase=2');
+  window.location.hash = '';
+  window.scrollTo = vi.fn();
+  mockFeeds();
+});
+
+afterEach(() => vi.unstubAllGlobals());
+
+describe('shop prototype', () => {
+  it('shows real products with a personal monthly price and a limit check', async () => {
+    render(<ShopApp />);
+    const phone = await screen.findByRole('button', { name: /Apple iPhone 17 256GB/ });
+    expect(phone).toHaveTextContent('from 42,35 € a month');
+    expect(phone).toHaveTextContent('Fits your limit');
+    expect(screen.getByRole('button', { name: /Samsung QLED/ })).toHaveTextContent('Above your free limit');
+  });
+
+  it('searches as the person types', async () => {
+    const user = userEvent.setup();
+    render(<ShopApp />);
+    await user.type(await screen.findByRole('searchbox'), 'samsung');
+    expect(screen.getByText('1 product for “samsung”')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /iPhone 17 256GB/ })).not.toBeInTheDocument();
+  });
+
+  it('compares stores, then pays from the credit line on the ESTO payment page (phase 2)', async () => {
+    const user = userEvent.setup();
+    render(<ShopApp />);
+    await user.click(await screen.findByRole('button', { name: /Apple iPhone 17 256GB/ }));
+
+    const offers = screen.getAllByRole('radio');
+    expect(offers[0]).toHaveTextContent('ONOFF');
+    expect(offers[0]).toHaveTextContent('Lowest');
+    expect(offers[1]).toHaveTextContent('2 to 4 working days');
+
+    await user.click(screen.getByRole('button', { name: 'Buy at ONOFF with your credit line' }));
+    const flow = screen.getByRole('dialog');
+    expect(flow).toHaveTextContent('You are on the ONOFF site. This page is a stand-in.');
+    await user.click(within(flow).getByRole('radio', { name: /Card/ }));
+    expect(within(flow).getByRole('button', { name: 'Continue to ESTO' })).toBeDisabled();
+    await user.click(within(flow).getByRole('radio', { name: /ESTO/ }));
+    await user.click(within(flow).getByRole('button', { name: 'Continue to ESTO' }));
+
+    // ESTO has to know who the customer is before it can offer the credit line.
+    expect(within(flow).getByRole('heading', { name: 'Confirm who you are' })).toBeInTheDocument();
+    await user.click(within(flow).getByRole('button', { name: 'Smart-ID' }));
+    expect(within(flow).getByRole('radio', { name: /Credit line/ })).toHaveAttribute('aria-checked', 'true');
+    expect(flow).toHaveTextContent('Lowest monthly payment for this purchase');
+    expect(flow).toHaveTextContent('Your monthly invoice after this purchase');
+    expect(flow).toHaveTextContent('pay more in any month at no extra cost');
+    expect(flow).toHaveTextContent('No application and no new contract');
+
+    // Another method goes on as today, with no push back to the credit line.
+    await user.click(within(flow).getByRole('radio', { name: 'Hire purchase' }));
+    await user.click(within(flow).getByRole('button', { name: 'Continue with Hire purchase' }));
+    expect(within(flow).getByRole('heading', { name: 'The demo stops here' })).toBeInTheDocument();
+    await user.click(within(flow).getByRole('button', { name: 'Back to the payment methods' }));
+
+    await user.click(within(flow).getByRole('radio', { name: /Credit line/ }));
+    await user.click(within(flow).getByRole('button', { name: /from my credit line/ }));
+    expect(within(flow).getByRole('heading', { name: 'Order confirmed' })).toBeInTheDocument();
+    expect(flow).toHaveTextContent('No order is made');
+
+    // Back in the ESTO app, the purchase is on the dashboard and in Transactions.
+    await user.click(within(flow).getByRole('button', { name: 'See the purchase in the ESTO app' }));
+    expect(screen.getByRole('heading', { name: 'Latest purchase' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Your credit limit')).toHaveTextContent('101 €');
+    await user.click(screen.getByRole('button', { name: 'All transactions' }));
+    expect(screen.getByRole('heading', { name: 'Transactions' })).toBeInTheDocument();
+    const row = screen.getAllByRole('row')[1];
+    expect(row).toHaveTextContent('Purchase');
+    expect(row).toHaveTextContent('ESTO AS');
+    expect(row).toHaveTextContent('ONOFF');
+    expect(row).toHaveTextContent('1 079,00 €');
+
+    await user.click(screen.getByRole('button', { name: 'Credit Line' }));
+    expect(screen.getByText('Credit used').parentElement).toHaveTextContent('1 399 €');
+    expect(screen.getByText(/Your lowest monthly payment went up by/)).toBeInTheDocument();
+  });
+
+  it('lets a customer buy above the free limit with another method', async () => {
+    const user = userEvent.setup();
+    render(<ShopApp />);
+    await user.click(await screen.findByRole('button', { name: /Samsung QLED/ }));
+    await user.click(screen.getByRole('button', { name: /^Buy at \w+$/ }));
+    const flow = screen.getByRole('dialog');
+    await user.click(within(flow).getByRole('button', { name: 'Continue to ESTO' }));
+    await user.click(within(flow).getByRole('button', { name: 'Mobile-ID' }));
+
+    expect(within(flow).getByRole('radio', { name: /Credit line.*Limit too low/ })).toBeInTheDocument();
+    expect(within(flow).getByRole('radio', { name: 'Hire purchase' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+    await user.click(within(flow).getByRole('radio', { name: /Credit line/ }));
+    expect(flow).toHaveTextContent(/This order needs .* more/);
+    expect(within(flow).queryByRole('button', { name: /from my credit line/ })).not.toBeInTheDocument();
+  });
+
+  it('keeps the payback block short and links to the credit line explanation', async () => {
+    const user = userEvent.setup();
+    render(<ShopApp />);
+    await user.click(await screen.findByRole('button', { name: /Apple iPhone 17 256GB/ }));
+    expect(screen.getByText(/The lowest payment for this purchase starts at/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'How a credit line works' }));
+    expect(screen.getByRole('tab', { name: 'How it works' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('heading', { name: 'How it works' })).toBeInTheDocument();
+  });
+
+  it('has three tabs on the Credit Line page: My credit line, How it works, and FAQ', async () => {
+    const user = userEvent.setup();
+    render(<ShopApp />);
+    await user.click(await screen.findByRole('button', { name: 'Credit Line' }));
+    expect(screen.getByRole('tab', { name: 'My credit line' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByText('Credit used')).toBeInTheDocument();
+    // The balance card has the same way to the products as on the Dashboard.
+    expect(screen.getByRole('button', { name: 'Shop with your limit' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('tab', { name: 'How it works' }));
+    expect(window.location.hash).toBe('#/credit-line?tab=how-it-works');
+    for (const title of [
+      'Apply and sign for free',
+      'Pay only for what you use',
+      'Monthly payments decrease',
+      'Payments replenish balance',
+    ]) {
+      expect(screen.getByRole('heading', { name: title })).toBeInTheDocument();
+    }
+    expect(screen.queryByText('Credit used')).not.toBeInTheDocument();
+    // Two ways to use the limit, side by side, each with its button.
+    expect(screen.getByRole('heading', { name: 'Two ways to use your limit' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Pay at a store/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Find a product' })).toBeInTheDocument();
+    // The facts in numbers.
+    expect(screen.getByText('From 19% a year')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('tab', { name: 'FAQ' }));
+    expect(window.location.hash).toBe('#/credit-line?tab=faq');
+    expect(screen.getByText('Can I repay everything early?')).toBeInTheDocument();
+    expect(screen.getByText(/Can I pay at a store from my credit line\?/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Shop with your limit' }));
+    expect(await screen.findByRole('searchbox')).toBeInTheDocument();
+  });
+
+  it('shows each Dashboard block only when it has something to say', async () => {
+    const user = userEvent.setup();
+    render(<ShopApp />);
+    const nav = screen.getByRole('navigation', { name: 'Main' });
+    await user.click(within(nav).getByRole('button', { name: 'Dashboard' }));
+
+    // Before a purchase: the explanation shows, and the latest purchase does not.
+    expect(await screen.findByRole('heading', { name: 'How your credit line works' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Pay at a store/ })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Latest purchase' })).not.toBeInTheDocument();
+    // ESTO's own blocks stay.
+    expect(screen.getByRole('heading', { name: 'Personal finances' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Small loan/ })).toBeInTheDocument();
+
+    // After a purchase: the explanation is gone, and the latest purchase shows.
+    await user.click(screen.getByRole('button', { name: /Pay at a store/ }));
+    await user.click(await screen.findByRole('button', { name: /Apple iPhone 17 256GB/ }));
+    await user.click(screen.getByRole('button', { name: 'Buy at ONOFF with your credit line' }));
+    const flow = screen.getByRole('dialog');
+    await user.click(within(flow).getByRole('button', { name: 'Continue to ESTO' }));
+    await user.click(within(flow).getByRole('button', { name: 'Smart-ID' }));
+    await user.click(within(flow).getByRole('button', { name: /from my credit line/ }));
+    await user.click(within(flow).getByRole('button', { name: 'See the purchase in the ESTO app' }));
+    expect(screen.getByRole('heading', { name: 'Latest purchase' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'How your credit line works' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Personal finances' })).toBeInTheDocument();
+  });
+
+  it('sends the person to the real store page in phase 1', async () => {
+    const user = userEvent.setup();
+    render(<ShopApp />);
+    await user.click(await screen.findByRole('button', { name: 'Switch to Phase 1' }));
+    expect(window.location.search).toBe('?phase=1');
+
+    await user.click(screen.getByRole('button', { name: /Apple iPhone 17 256GB/ }));
+    expect(screen.getByRole('link', { name: /Go to ONOFF to buy/ })).toHaveAttribute(
+      'href',
+      'https://onoff.ee/iphone-17',
+    );
+    expect(screen.queryByRole('button', { name: /with your credit line/ })).not.toBeInTheDocument();
+    // Phase 2 parts do not show in Phase 1.
+    const nav = screen.getByRole('navigation', { name: 'Main' });
+    await user.click(within(nav).getByRole('button', { name: 'Credit Line' }));
+    expect(screen.queryByText(/Purchases from your credit line/)).not.toBeInTheDocument();
+    await user.click(screen.getByRole('tab', { name: 'How it works' }));
+    expect(screen.getByRole('heading', { name: 'Payments replenish balance' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /Pay at a store/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'How to use your limit' })).toBeInTheDocument();
+    await user.click(screen.getByRole('tab', { name: 'FAQ' }));
+    expect(screen.queryByText(/Can I pay at a store from my credit line/)).not.toBeInTheDocument();
+    await user.click(within(nav).getByRole('button', { name: /Find products/ }));
+    await user.click(screen.getByRole('button', { name: /Apple iPhone 17 256GB/ }));
+    // One link to the store, not two.
+    expect(
+      screen.getAllByRole('link').filter((a) => a.getAttribute('href') === 'https://onoff.ee/iphone-17'),
+    ).toHaveLength(1);
+  });
+
+  it('starts on the write-up page, with sources, and opens the prototype', async () => {
+    window.history.replaceState(null, '', '/');
+    const user = userEvent.setup();
+    render(<ShopApp />);
+    expect(screen.getByRole('heading', { name: 'Shop with your credit line' })).toBeInTheDocument();
+    expect(screen.queryByRole('navigation', { name: 'Main' })).not.toBeInTheDocument();
+
+    // A claim links to its source.
+    const marks = screen.getAllByRole('link', { name: 'Source 1: ESTO bond presentation 2026' });
+    expect(marks[0]).toHaveAttribute('href', expect.stringContaining('ESTO-Bond-2026-presentation.pdf'));
+
+    // The full text of a part stays closed until the reader opens it.
+    const full = screen.getByText(/Today ESTO comes later in the process/);
+    expect(full).not.toBeVisible();
+    await user.click(screen.getByText(/Read the full part: the eight places/));
+    expect(full).toBeVisible();
+
+    // A link in the text opens that page of the prototype.
+    await user.click(screen.getByRole('button', { name: 'See the Dashboard' }));
+    expect(window.location.search).toBe('?phase=1');
+    expect(window.location.hash).toBe('#/dashboard');
+
+    await user.click(screen.getByRole('button', { name: 'About the concept' }));
+    await user.click(screen.getByRole('button', { name: 'Open Phase 2' }));
+    expect(window.location.search).toBe('?phase=2');
+    expect(await screen.findByRole('searchbox')).toBeInTheDocument();
+    expect(screen.getByText('Prototype, Phase 2: Credit line at checkout')).toBeInTheDocument();
+  });
+
+  it('watches a price and shows an alert when the price goes down', async () => {
+    const user = userEvent.setup();
+    render(<ShopApp />);
+    await user.click(await screen.findByRole('button', { name: /Apple iPhone 17 256GB/ }));
+    await user.click(screen.getByRole('button', { name: 'Tell me when the price goes down' }));
+    expect(screen.getByRole('button', { name: 'Watching the price' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+
+    await user.click(screen.getByRole('button', { name: /Back to search/ }));
+    expect(screen.queryByText(/Price went down/)).not.toBeInTheDocument();
+
+    await user.click(screen.getByText(/About this concept/));
+    const simulate = screen.getByRole('group', { name: /Simulate a lower price/ });
+    await user.click(within(simulate).getByRole('button', { name: /iPhone 17 256GB/ }));
+    expect(screen.getAllByText(/Price went down/).length).toBeGreaterThan(0);
+    expect(screen.getByLabelText('The email the customer gets')).toHaveTextContent('no email is sent');
+  });
+
+  it('sits inside the app frame, with a dashboard that leads to the shop', async () => {
+    const user = userEvent.setup();
+    render(<ShopApp />);
+    const nav = screen.getByRole('navigation', { name: 'Main' });
+    expect(within(nav).getByRole('button', { name: /Find products/ })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+
+    await user.click(within(nav).getByRole('button', { name: 'Dashboard' }));
+    expect(await screen.findByRole('button', { name: 'Withdraw money' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Fits your limit today' })).toBeInTheDocument();
+
+    await user.click(within(nav).getByRole('button', { name: 'Invoices' }));
+    expect(screen.getByText(/"Invoices" is not part of this concept/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Shop with your limit' }));
+    expect(screen.getByRole('searchbox')).toBeInTheDocument();
+  });
+
+  it('says so when the product data does not load, and lets the person retry', async () => {
+    mockFeeds(false);
+    const user = userEvent.setup();
+    render(<ShopApp />);
+    expect(await screen.findByRole('alert')).toHaveTextContent('The product data did not load');
+    mockFeeds(true);
+    await user.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(await screen.findByRole('button', { name: /Apple iPhone 17 256GB/ })).toBeInTheDocument();
+  });
+});
