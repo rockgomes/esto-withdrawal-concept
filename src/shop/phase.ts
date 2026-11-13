@@ -42,7 +42,7 @@ export function readPhase(): Phase | null {
 }
 
 /** Keeps the phase in the address, so a link opens the same view and Back works. */
-export function writePhase(phase: Phase | null, productId?: string): void {
+export function writePhase(phase: Phase | null, productId?: string, hash?: string): void {
   const url = new URL(window.location.href);
   if (phase === null) {
     url.searchParams.delete('phase');
@@ -50,6 +50,7 @@ export function writePhase(phase: Phase | null, productId?: string): void {
   } else {
     url.searchParams.set('phase', String(phase));
     if (productId) url.hash = `#/p/${encodeURIComponent(productId)}`;
+    else if (hash) url.hash = hash;
   }
   window.history.pushState(null, '', url);
 }

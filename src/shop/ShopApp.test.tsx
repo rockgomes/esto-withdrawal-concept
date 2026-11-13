@@ -29,7 +29,7 @@ describe('shop prototype', () => {
   it('shows real products with a personal monthly price and a limit check', async () => {
     render(<ShopApp />);
     const phone = await screen.findByRole('button', { name: /Apple iPhone 17 256GB/ });
-    expect(phone).toHaveTextContent('108,99 € / month over 12 months');
+    expect(phone).toHaveTextContent('from 42,35 € a month');
     expect(phone).toHaveTextContent('Fits your limit');
     expect(screen.getByRole('button', { name: /Samsung QLED/ })).toHaveTextContent('Above your free limit');
   });
@@ -220,22 +220,30 @@ describe('shop prototype', () => {
     ).toHaveLength(1);
   });
 
-  it('starts on a page that shows real products on the limit, and opens the prototype', async () => {
+  it('starts on the write-up page, with sources, and opens the prototype', async () => {
     window.history.replaceState(null, '', '/');
     const user = userEvent.setup();
     render(<ShopApp />);
     expect(screen.getByRole('heading', { name: 'Shop with your credit line' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Credit line at checkout' })).toBeInTheDocument();
     expect(screen.queryByRole('navigation', { name: 'Main' })).not.toBeInTheDocument();
 
-    // The small search on the page runs on the real catalog.
-    const result = await screen.findByRole('button', { name: /Apple iPhone 17 256GB.*month/ });
-    await user.click(result);
+    // A claim links to its source.
+    const marks = screen.getAllByRole('link', { name: 'Source 1: ESTO bond presentation 2026' });
+    expect(marks[0]).toHaveAttribute('href', expect.stringContaining('ESTO-Bond-2026-presentation.pdf'));
+
+    // The full text of a part stays closed until the reader opens it.
+    const full = screen.getByText(/Today ESTO comes later in the process/);
+    expect(full).not.toBeVisible();
+    await user.click(screen.getByText(/Read the full part: the eight places/));
+    expect(full).toBeVisible();
+
+    // A link in the text opens that page of the prototype.
+    await user.click(screen.getByRole('button', { name: 'See the Dashboard' }));
     expect(window.location.search).toBe('?phase=1');
-    expect(await screen.findByRole('link', { name: /Go to ONOFF to buy/ })).toBeInTheDocument();
+    expect(window.location.hash).toBe('#/dashboard');
 
     await user.click(screen.getByRole('button', { name: 'About the concept' }));
-    await user.click(screen.getByRole('button', { name: 'Open the Phase 2 prototype' }));
+    await user.click(screen.getByRole('button', { name: 'Open Phase 2' }));
     expect(window.location.search).toBe('?phase=2');
     expect(await screen.findByRole('searchbox')).toBeInTheDocument();
     expect(screen.getByText('Prototype, Phase 2: Credit line at checkout')).toBeInTheDocument();

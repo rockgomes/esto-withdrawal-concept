@@ -148,9 +148,9 @@ export default function ShopApp() {
   const [route, navigate] = useRoute();
   const [notice, setNotice] = useState('');
   const [phase, setPhase] = useState<Phase | null>(readPhase);
-  const pickPhase = (next: Phase | null, productId?: string) => {
+  const pickPhase = (next: Phase | null, productId?: string, hash?: string) => {
     setPhase(next);
-    writePhase(next, productId);
+    writePhase(next, productId, hash);
     // The route listens to the hash, so tell it the address changed.
     window.dispatchEvent(new HashChangeEvent('hashchange'));
     window.scrollTo({ top: 0 });
@@ -188,13 +188,7 @@ export default function ShopApp() {
     );
 
   if (phase === null) {
-    return (
-      <Start
-        catalog={load.status === 'ready' ? load.catalog : null}
-        account={DEMO_ACCOUNT}
-        onOpen={pickPhase}
-      />
-    );
+    return <Start catalog={load.status === 'ready' ? load.catalog : null} onOpen={pickPhase} />;
   }
 
   return (
@@ -733,8 +727,9 @@ function ProductCard({
       <span className="product-body">
         <span className="product-name">{product.name}</span>
         <span className="monthly">
-          {money(plan(price, account).monthly)}
-          <small> / month over 12 months</small>
+          <small>from </small>
+          {money(minimumPayment(price, account.rate))}
+          <small> a month</small>
         </span>
         <span className="muted small">
           {money(price)} at {product.offers[0].store.name}
@@ -988,8 +983,8 @@ function DropList({
             <strong>Price went down {money(d.saved)}</strong>
             <span className="drop-name">{d.product.name}</span>
             <span className="small">
-              Now {money(d.now)} at {d.product.offers[0].store.name}, was {money(d.was)}.{' '}
-              {money(plan(d.now, account).monthly)} a month over 12 months.{' '}
+              Now {money(d.now)} at {d.product.offers[0].store.name}, was {money(d.was)}. From{' '}
+              {money(minimumPayment(d.now, account.rate))} a month.{' '}
               {fits(d.now, account) ? 'It fits your limit.' : ''}
             </span>
           </span>
@@ -1037,8 +1032,8 @@ function WatchList({
                       : now > w.price
                         ? `up from ${money(w.price)}`
                         : `same since ${formatDate(w.since)}`}
-                    {', '}
-                    {money(plan(now, account).monthly)} / month
+                    {', from '}
+                    {money(minimumPayment(now, account.rate))} a month
                   </span>
                 </span>
               </button>
@@ -1389,8 +1384,8 @@ function About({
               </p>
               <p>
                 It is now {money(d.now)} at {d.product.offers[0].store.name}. It was {money(d.was)} when you
-                started to watch it. For you that is {money(plan(d.now, account).monthly)} a month over 12
-                months. {fits(d.now, account) ? 'It fits your free limit.' : 'It is above your free limit.'}
+                started to watch it. You can pay it from {money(minimumPayment(d.now, account.rate))} a month.{' '}
+                {fits(d.now, account) ? 'It fits your free limit.' : 'It is above your free limit.'}
               </p>
               <p className="mail-link">See the product in ESTO</p>
               <p className="muted small">Prototype: no email is sent. This is the email the customer gets.</p>
