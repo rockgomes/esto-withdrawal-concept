@@ -1,31 +1,18 @@
-# Shop with your credit line
+# One loop, shipped
 
-An unofficial concept for the ESTO **Product Builder** test: a working prototype and a write-up.
+An unofficial concept for the ESTO **Product Builder** application: the credit-line
+withdrawal screen, redesigned and built as a working prototype.
 
 By Rock Gomes, product designer. Portfolio: [rockgomes.com](https://www.rockgomes.com)
 
-**Open it:** [esto-shop-with-credit-line.netlify.app/shop/](https://esto-shop-with-credit-line.netlify.app/shop/)
+The page runs the loop from the job post on one real screen:
 
-> Not affiliated with or endorsed by ESTO. The customer, the limit, and the payments in the prototype are examples. Product data belongs to each store.
+1. **Problem.** Five findings from the current screen, drawn as redlines over a wireframe (not a screenshot).
+2. **Prototype.** A live withdrawal screen. Drag the amount, pick when you need the money and the term, switch between EN, ET, LV and LT. An edge cases panel puts it into states that often break: over the limit, under the minimum, limit used up, slow network, longest copy, 320px phone.
+3. **Spec.** The handover an engineer would need, copyable as Markdown.
+4. **Numbers.** How success would be measured, with no made-up baselines.
 
-## The idea
-
-A credit line customer has a free limit, and the app gives it one action: take money out. This concept puts real products from ESTO partner stores next to the limit.
-
-- **Phase 1.** The customer finds a product in ESTO, sees the monthly price, and buys at the store, as today.
-- **Phase 2.** The customer pays with the credit line at the store checkout, with no application and no new contract.
-
-## What you can do on the page
-
-- **Read the write-up.** The start page holds it: the problem, the idea, how to measure impact, what was left out, how to get it live, the use of AI, and a business case.
-- **Take the tour.** 8 steps through Phase 1 and Phase 2.
-- **Open the prototype.** Dashboard, "Find products", the product page, the Credit Line page, the checkout of Phase 2, and Transactions.
-
-## What is real, and what is an example
-
-- **Real.** Products, prices, pictures, stock, and links. They come from the open product feeds that six ESTO partner stores publish in the Hinnavaatlus price list format. The same product is matched across stores by barcode (GTIN). No AI is used inside the product.
-- **Example.** The customer, the limit, the amount in use, and the rows in Transactions. The 37.10% rate is the highest interest rate in ESTO's own credit line example.
-- **Stand-in.** The store checkout and ESTO's payment page in Phase 2. No order is made.
+> Not affiliated with or endorsed by ESTO. Rates and fees in the prototype are examples, not real pricing.
 
 ## Run it
 
@@ -33,8 +20,6 @@ A credit line customer has a free limit, and the app gives it one action: take m
 npm install
 npm run dev
 ```
-
-Then open `/shop/`.
 
 ## Check it
 
@@ -47,25 +32,30 @@ CI runs the same steps on every push and pull request.
 
 ## How it is put together
 
-| File                                    | What it holds                                                                                    |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `scripts/build-catalog.mjs`             | Reads the store feeds and writes `public/data/catalog.json`.                                     |
-| `scripts/catalog-lib.mjs`               | Feed parsing, barcode matching, the listing rules, and price history. Pure functions with tests. |
-| `.github/workflows/refresh-catalog.yml` | Runs the script once a day and commits the result.                                               |
-| `src/shop/Start.tsx`                    | The start page with the write-up.                                                                |
-| `src/shop/ShopApp.tsx`                  | The pages of the prototype.                                                                      |
-| `src/shop/Tour.tsx`, `tourSteps.ts`     | The guided tour.                                                                                 |
-| `src/shop/Checkout.tsx`                 | Phase 2: the store checkout stand-in and ESTO's payment page.                                    |
-| `src/shop/search.ts`                    | Search, filters, and ranking.                                                                    |
-| `src/shop/credit.ts`                    | Free limit, payment plan, and lowest allowed payment.                                            |
-| `src/shop/watch.ts`                     | Price watch and price alerts.                                                                    |
+| Path                                  | What it does                                                                                                                                   |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/lib/money.ts`                    | Credit math in integer cents: annuity payment, schedule, total cost. The last instalment absorbs rounding, so the plan always adds up exactly. |
+| `src/lib/format.ts`                   | Money formatting per market and a forgiving parser for typed amounts (`1 500`, `1500,50`, `1.500`, `1,500.50`).                                |
+| `src/lib/withdrawal.ts`               | The screen's state as a reducer: defaults, clamping with a visible notice, limit changes.                                                      |
+| `src/i18n/strings.ts`                 | Typed copy for EN, ET, LV and LT. A missing key is a type error; a mismatched placeholder fails a test.                                        |
+| `src/components/WithdrawalScreen.tsx` | The prototype screen, including its loading and empty states.                                                                                  |
+| `src/components/BeforeSchematic.tsx`  | The current screen as a wireframe with animated redlines.                                                                                      |
+| `src/components/Loop.tsx`             | The hero: the job post's loop as the page's navigation.                                                                                        |
+| `src/content.ts`, `src/spec.ts`       | Findings and spec as data, shared by every part of the page that shows them.                                                                   |
 
-Run `node scripts/build-catalog.mjs` to refresh the catalog by hand.
+Decisions worth knowing:
+
+- **One grouping rule for three markets.** CLDR writes `2000 €` in Estonian and Latvian but `2 000 €` in Lithuanian. The formatter forces `useGrouping: 'always'` so all three match, and a test locks it in.
+- **Free is the default.** “Right now” (19.90 €) is never pre-selected.
+- **Corrections are never silent.** Out-of-range input is fixed and the screen says why.
+- **Motion has a still version.** Every animation respects `prefers-reduced-motion`. Big state changes use the View Transitions API where the browser has it.
+
+## Copy
+
+English is the source. The Estonian, Latvian and Lithuanian strings are first drafts and need a native
+speaker's review before anything like this ships.
 
 ## Stack
 
-React 19, TypeScript, Vite, Vitest, and Testing Library. Plain CSS with custom properties, no UI library. Built with [Claude Code](https://claude.com/claude-code).
-
-## The first concept (at `/`)
-
-An earlier concept for the same test: the credit line withdrawal page, redesigned and built as a working prototype. It has the problem, the prototype in four languages, a spec, and how to measure it. Its code is in `src/components`, `src/lib`, and `src/i18n`.
+React 19, TypeScript, Vite, Vitest and Testing Library. Plain CSS with custom properties, no UI library.
+Built with [Claude Code](https://claude.com/claude-code).
